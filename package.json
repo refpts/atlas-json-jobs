@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.962.0",
     "clean-css": "^5.3.3",
     "constantinople": "^4.0.1",
     "cookie-parser": "^1.4.7",
@@ -16,6 +17,7 @@
     "md5": "^2.3.0",
     "mersenne-twister": "^1.1.0",
     "morgan": "^1.10.1",
+    "mysql2": "^3.16.0",
     "pug": "^3.0.3",
     "uglify-js": "^3.19.3"
   }
