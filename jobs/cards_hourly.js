@@ -1,5 +1,5 @@
+// jobs/cards_hourly.js
 const { getDbPool } = require("../lib/db");
-const { nowIso } = require("../lib/util");
 
 module.exports = {
   name: "cards_hourly",
@@ -28,8 +28,8 @@ module.exports = {
     const [rows] = await pool.query(sql);
     await pool.end();
 
+    // This becomes json.contents
     return {
-      generated_at: nowIso(),
       count: rows.length,
       data: rows,
     };

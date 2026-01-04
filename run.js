@@ -1,29 +1,39 @@
+// run.js
 const { getJob } = require("./jobs");
 const { putJson } = require("./lib/spaces");
+
+function buildEnvelope(contents) {
+  const { HEADER_AUTHOR, HEADER_DISCLOSURE } = process.env;
+
+  if (!HEADER_AUTHOR || !HEADER_DISCLOSURE) {
+    throw new Error("Missing required header env vars: HEADER_AUTHOR, HEADER_DISCLOSURE");
+  }
+
+  return {
+    header: {
+      author: HEADER_AUTHOR,
+      disclosure: HEADER_DISCLOSURE,
+      generated_at: new Date().toISOString(),
+    },
+    contents,
+  };
+}
 
 async function main() {
   const jobName = process.argv[2];
   if (!jobName) throw new Error("Usage: node run.js <jobName>");
 
-  console.log("ENV CHECK:", {
-    DB_HOST: !!process.env.DB_HOST,
-    DB_PORT: !!process.env.DB_PORT,
-    DB_USER: !!process.env.DB_USER,
-    DB_PASSWORD: !!process.env.DB_PASSWORD,
-    DB_NAME: !!process.env.DB_NAME,
-    DB_CA_CERT: !!process.env.DB_CA_CERT,
-    SPACES_BUCKET: !!process.env.SPACES_BUCKET,
-    SPACES_REGION: !!process.env.SPACES_REGION,
-    SPACES_KEY: !!process.env.SPACES_KEY,
-    SPACES_SECRET: !!process.env.SPACES_SECRET,
-});
-  
   const job = getJob(jobName);
   const bucket = process.env[job.output.bucketEnv];
   if (!bucket) throw new Error(`Missing env var ${job.output.bucketEnv}`);
 
   console.log(`[${job.name}] start`);
-  const json = await job.run();
+
+  // Each job returns the *contents* payload only
+  const contents = await job.run();
+
+  // Wrap universally
+  const json = buildEnvelope(contents);
 
   const result = await putJson({
     bucket,
