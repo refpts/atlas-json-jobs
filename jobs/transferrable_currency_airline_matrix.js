@@ -58,7 +58,7 @@ module.exports = {
           ctp.from_loyalty_program_id AS from_id,
           ctp.to_loyalty_program_id AS to_id,
           lp_to.short_name AS to_name,
-          c.short_name AS currency_short_name,
+          COALESCE(a.short_name, a.full_name) AS company_name,
           ctp.base_numerator,
           ctp.base_denominator,
           ctp.transfer_speed_display
@@ -67,8 +67,8 @@ module.exports = {
           ON ctp.from_loyalty_program_id = lp_from.id
         JOIN LoyaltyProgram lp_to
           ON ctp.to_loyalty_program_id = lp_to.id
-        LEFT JOIN Currency c
-          ON lp_to.currency_id = c.id
+        LEFT JOIN Airline a
+          ON a.loyalty_program_id = lp_to.id
         WHERE ctp.from_loyalty_program_id IN (?)
           AND ctp.is_active = 1
           AND lp_from.is_active = 1
@@ -89,7 +89,7 @@ module.exports = {
           id: row.to_id,
           name: row.to_name,
           loyalty_name: row.to_name,
-          currency_short_name: row.currency_short_name || "",
+          company_name: row.company_name || row.to_name,
         });
       }
 
@@ -112,8 +112,8 @@ module.exports = {
       columns: columns.map((column) => ({ name: column.name })),
       rows: rows.map((row) => ({
         name: row.name,
+        company_name: row.company_name,
         loyalty_name: row.loyalty_name,
-        currency_short_name: row.currency_short_name,
       })),
       matrix,
     };

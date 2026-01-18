@@ -89,13 +89,25 @@ module.exports = {
       requirementRows.map((row) => [row.from_id, row]),
     );
 
-    const blankIfNull = (value) => (value == null ? "" : value);
+    const formatValue = (value) => {
+      if (value == null) return "";
+      if (typeof value === "number") return value.toLocaleString("en-US");
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed) return "";
+        const numberValue = Number(trimmed);
+        if (Number.isFinite(numberValue)) {
+          return numberValue.toLocaleString("en-US");
+        }
+      }
+      return value;
+    };
 
     const matrix = ROWS.map((rowDef) =>
       columns.map((column) => {
         const row = requirementBySourceId.get(column.id);
         if (!row) return "";
-        return blankIfNull(row[rowDef.id]);
+        return formatValue(row[rowDef.id]);
       }),
     );
 
