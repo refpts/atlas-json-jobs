@@ -19,4 +19,8 @@ function getJob(name) {
   return job;
 }
 
-module.exports = { getJob };
+function getAllJobs() {
+  return Object.values(JOBS);
+}
+
+module.exports = { getJob, getAllJobs };

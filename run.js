@@ -1,5 +1,5 @@
 // run.js
-const { getJob } = require("./jobs");
+const { getJob, getAllJobs } = require("./jobs");
 const { putJson } = require("./lib/spaces");
 
 function buildEnvelope(contents) {
@@ -19,11 +19,7 @@ function buildEnvelope(contents) {
   };
 }
 
-async function main() {
-  const jobName = process.argv[2];
-  if (!jobName) throw new Error("Usage: node run.js <jobName>");
-
-  const job = getJob(jobName);
+async function runJob(job) {
   const bucket = process.env[job.output.bucketEnv];
   if (!bucket) throw new Error(`Missing env var ${job.output.bucketEnv}`);
 
@@ -43,6 +39,22 @@ async function main() {
   });
 
   console.log(`[${job.name}] uploaded s3://${result.bucket}/${result.key} (${result.bytes} bytes)`);
+}
+
+async function main() {
+  const jobName = process.argv[2];
+  if (!jobName) throw new Error("Usage: node run.js <jobName|all>");
+
+  if (jobName === "all") {
+    const jobs = getAllJobs();
+    for (const job of jobs) {
+      await runJob(job);
+    }
+    return;
+  }
+
+  const job = getJob(jobName);
+  await runJob(job);
 }
 
 main().catch((err) => {
