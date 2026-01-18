@@ -6,6 +6,7 @@ const SOURCE_PROGRAMS = [
   { id: 61, name: "Capital One Miles" },
   { id: 60, name: "Ultimate Rewards" },
   { id: 59, name: "ThankYou Rewards" },
+  { id: 58, name: "Rove" },
   { id: 51, name: "Bonvoy" },
   { id: 57, name: "Wells Fargo Rewards" },
 ];
@@ -58,7 +59,9 @@ module.exports = {
     const columns = SOURCE_PROGRAMS.map((program) => ({
       id: program.id,
       name: sourceNameById.get(program.id) || program.name,
-    }));
+    })).sort((a, b) =>
+      (a.name || "").localeCompare(b.name || "", "en", { sensitivity: "base" }),
+    );
 
     const [requirementRows] = await pool.query(
       `
