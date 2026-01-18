@@ -100,6 +100,10 @@ module.exports = {
       columns.map((column) => cellMap.get(`${column.id}:${row.id}`) || ""),
     );
 
-    return { columns, rows, matrix };
+    return {
+      columns: columns.map((column) => ({ name: column.name })),
+      rows: rows.map((row) => ({ name: row.name })),
+      matrix,
+    };
   },
 };

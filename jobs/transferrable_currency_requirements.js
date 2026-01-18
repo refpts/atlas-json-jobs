@@ -99,6 +99,10 @@ module.exports = {
       }),
     );
 
-    return { columns, rows: ROWS, matrix };
+    return {
+      columns: columns.map((column) => ({ name: column.name })),
+      rows: ROWS.map((row) => ({ name: row.name })),
+      matrix,
+    };
   },
 };

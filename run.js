@@ -3,16 +3,19 @@ const { getJob, getAllJobs } = require("./jobs");
 const { putJson } = require("./lib/spaces");
 
 function buildEnvelope(contents) {
-  const { HEADER_AUTHOR, HEADER_DISCLOSURE } = process.env;
+  const { HEADER_AUTHOR, HEADER_DISCLOSURE, HEADER_LICENSE_URL } = process.env;
 
-  if (!HEADER_AUTHOR || !HEADER_DISCLOSURE) {
-    throw new Error("Missing required header env vars: HEADER_AUTHOR, HEADER_DISCLOSURE");
+  if (!HEADER_AUTHOR || !HEADER_DISCLOSURE || !HEADER_LICENSE_URL) {
+    throw new Error(
+      "Missing required header env vars: HEADER_AUTHOR, HEADER_DISCLOSURE, HEADER_LICENSE_URL",
+    );
   }
 
   return {
     header: {
       author: HEADER_AUTHOR,
       disclosure: HEADER_DISCLOSURE,
+      license_url: HEADER_LICENSE_URL,
       generated_at: new Date().toISOString(),
     },
     contents,
