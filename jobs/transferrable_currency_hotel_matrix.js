@@ -57,6 +57,7 @@ module.exports = {
           ctp.from_loyalty_program_id AS from_id,
           ctp.to_loyalty_program_id AS to_id,
           lp_to.short_name AS to_name,
+          c.short_name AS currency_short_name,
           ctp.base_numerator,
           ctp.base_denominator,
           ctp.transfer_speed_display
@@ -65,6 +66,8 @@ module.exports = {
           ON ctp.from_loyalty_program_id = lp_from.id
         JOIN LoyaltyProgram lp_to
           ON ctp.to_loyalty_program_id = lp_to.id
+        LEFT JOIN Currency c
+          ON lp_to.currency_id = c.id
         WHERE ctp.from_loyalty_program_id IN (?)
           AND ctp.is_active = 1
           AND lp_from.is_active = 1
@@ -81,7 +84,12 @@ module.exports = {
 
     for (const row of transferRows) {
       if (!rowMap.has(row.to_id)) {
-        rowMap.set(row.to_id, { id: row.to_id, name: row.to_name });
+        rowMap.set(row.to_id, {
+          id: row.to_id,
+          name: row.to_name,
+          loyalty_name: row.to_name,
+          currency_short_name: row.currency_short_name || "",
+        });
       }
 
       const rate = `${String(row.base_numerator)}:${String(
@@ -101,7 +109,11 @@ module.exports = {
 
     return {
       columns: columns.map((column) => ({ name: column.name })),
-      rows: rows.map((row) => ({ name: row.name })),
+      rows: rows.map((row) => ({
+        name: row.name,
+        loyalty_name: row.loyalty_name,
+        currency_short_name: row.currency_short_name,
+      })),
       matrix,
     };
   },
