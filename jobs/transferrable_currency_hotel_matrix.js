@@ -63,6 +63,7 @@ module.exports = {
           COALESCE(h.short_name, h.full_name) AS company_name,
           ctp.base_numerator,
           ctp.base_denominator,
+          ctp.base_decimal_expression AS decimal_expression,
           ctp.transfer_speed_display
         FROM CurrencyTransferPartner ctp
         JOIN LoyaltyProgram lp_from
@@ -99,7 +100,13 @@ module.exports = {
         row.base_denominator,
       )}`;
       const speed = row.transfer_speed_display || "";
-      cellMap.set(`${row.from_id}:${row.to_id}`, { rate, speed });
+      const decimalExpression =
+        row.decimal_expression == null ? "" : row.decimal_expression;
+      cellMap.set(`${row.from_id}:${row.to_id}`, {
+        rate,
+        speed,
+        decimal_expression: decimalExpression,
+      });
     }
 
     const rows = Array.from(rowMap.values()).sort((a, b) =>

@@ -127,6 +127,8 @@ module.exports = {
       return formatNumber(value);
     };
 
+    const blankIfNull = (value) => (value == null ? "" : value);
+
     const matrix = ROWS.map((rowDef) =>
       columns.map((column) => {
         const row = requirementBySourceId.get(column.id);
@@ -139,6 +141,23 @@ module.exports = {
       columns: columns.map((column) => ({ name: column.name })),
       rows: ROWS.map((row) => ({ name: row.name })),
       matrix,
+      raw_values: {
+        min_transfer_qty: columns.map((column) => {
+          const row = requirementBySourceId.get(column.id);
+          if (!row) return "";
+          return blankIfNull(row.min_transfer_qty);
+        }),
+        max_transfer_qty: columns.map((column) => {
+          const row = requirementBySourceId.get(column.id);
+          if (!row) return "";
+          return blankIfNull(row.max_transfer_qty);
+        }),
+        min_transfer_unit: columns.map((column) => {
+          const row = requirementBySourceId.get(column.id);
+          if (!row) return "";
+          return blankIfNull(row.min_transfer_unit);
+        }),
+      },
     };
   },
 };
