@@ -92,25 +92,46 @@ module.exports = {
       requirementRows.map((row) => [row.from_id, row]),
     );
 
-    const formatValue = (value) => {
-      if (value == null) return "";
-      if (typeof value === "number") return value.toLocaleString("en-US");
+    const parseNumber = (value) => {
+      if (typeof value === "number") return value;
       if (typeof value === "string") {
         const trimmed = value.trim();
-        if (!trimmed) return "";
+        if (!trimmed) return null;
         const numberValue = Number(trimmed);
-        if (Number.isFinite(numberValue)) {
-          return numberValue.toLocaleString("en-US");
-        }
+        return Number.isFinite(numberValue) ? numberValue : null;
       }
-      return value;
+      return null;
+    };
+
+    const formatNumber = (value) => {
+      if (value == null) return "";
+      const numberValue = parseNumber(value);
+      return numberValue == null ? value : numberValue.toLocaleString("en-US");
+    };
+
+    const formatRequirementValue = (rowId, value) => {
+      if (value == null) return "";
+      const numberValue = parseNumber(value);
+
+      if (
+        rowId === "min_transfer_qty" ||
+        rowId === "max_transfer_qty" ||
+        rowId === "min_transfer_unit"
+      ) {
+        if (numberValue == null) return value;
+        const formattedNumber = numberValue.toLocaleString("en-US");
+        const suffix = numberValue === 1 ? "point" : "points";
+        return `${formattedNumber} ${suffix}`;
+      }
+
+      return formatNumber(value);
     };
 
     const matrix = ROWS.map((rowDef) =>
       columns.map((column) => {
         const row = requirementBySourceId.get(column.id);
         if (!row) return "";
-        return formatValue(row[rowDef.id]);
+        return formatRequirementValue(rowDef.id, row[rowDef.id]);
       }),
     );
 
