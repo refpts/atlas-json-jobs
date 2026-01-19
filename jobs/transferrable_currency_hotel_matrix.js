@@ -64,7 +64,8 @@ module.exports = {
           ctp.base_numerator,
           ctp.base_denominator,
           ctp.base_decimal_expression AS decimal_expression,
-          ctp.transfer_speed_display
+          ctp.transfer_speed_display,
+          ctp.transfer_speed_hours
         FROM CurrencyTransferPartner ctp
         JOIN LoyaltyProgram lp_from
           ON ctp.from_loyalty_program_id = lp_from.id
@@ -102,9 +103,12 @@ module.exports = {
       const speed = row.transfer_speed_display || "";
       const decimalExpression =
         row.decimal_expression == null ? "" : row.decimal_expression;
+      const speedHours =
+        row.transfer_speed_hours == null ? "" : row.transfer_speed_hours;
       cellMap.set(`${row.from_id}:${row.to_id}`, {
         rate,
         speed,
+        speed_hours: speedHours,
         decimal_expression: decimalExpression,
       });
     }
