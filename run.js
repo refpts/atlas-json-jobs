@@ -42,8 +42,14 @@ function buildEnvelope(contents) {
 }
 
 async function runJob(job) {
-  const bucket = process.env[job.output.bucketEnv];
-  if (!bucket) throw new Error(`Missing env var ${job.output.bucketEnv}`);
+  const space = job.output.space || "public";
+  const bucketOverride = job.output.bucketEnv
+    ? process.env[job.output.bucketEnv]
+    : undefined;
+
+  if (job.output.bucketEnv && !bucketOverride) {
+    throw new Error(`Missing env var ${job.output.bucketEnv}`);
+  }
 
   console.log(`[${job.name}] start`);
 
@@ -54,7 +60,8 @@ async function runJob(job) {
   const json = buildEnvelope(contents);
 
   const result = await putJson({
-    bucket,
+    space,
+    bucket: bucketOverride,
     key: job.output.key,
     json,
     cacheControl: job.output.cacheControl,

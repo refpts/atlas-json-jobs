@@ -4,7 +4,7 @@ const { getDbPool } = require("../lib/db");
 module.exports = {
   name: "cards_hourly",
   output: {
-    bucketEnv: "SPACES_BUCKET",
+    space: "public",
     key: "cards.json",
     cacheControl: "public, max-age=300",
   },

@@ -22,7 +22,7 @@ const ROWS = [
 module.exports = {
   name: "transferrable_currency_requirements",
   output: {
-    bucketEnv: "SPACES_BUCKET",
+    space: "public",
     key: "transferrable_currency_requirements.json",
     cacheControl: "public, max-age=300",
   },

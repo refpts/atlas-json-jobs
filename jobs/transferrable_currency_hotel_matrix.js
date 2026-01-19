@@ -13,7 +13,7 @@ const SOURCE_PROGRAMS = [
 module.exports = {
   name: "transferrable_currency_hotel_matrix",
   output: {
-    bucketEnv: "SPACES_BUCKET",
+    space: "public",
     key: "transferrable_currency_hotel_matrix.json",
     cacheControl: "public, max-age=300",
   },
