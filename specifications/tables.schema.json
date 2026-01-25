@@ -68,7 +68,9 @@
       "additionalProperties": false,
       "properties": {
         "enabled": { "type": "boolean" },
-        "search": { "type": "boolean" }
+        "search": { "type": "boolean" },
+        "columns": { "type": "string" },
+        "expand": { "type": "string" }
       }
     },
     "Column": {
@@ -100,6 +102,7 @@
       "properties": {
         "key": { "type": "string" },
         "label": { "type": "string", "description": "If present, becomes <th scope=\"row\"> in the first column. Cells should then map to remaining columns." },
+        "header": { "$ref": "#/definitions/RowHeader" },
         "classes": { "type": "array", "items": { "type": "string" } },
         "attributes": { "$ref": "#/definitions/StringMap" },
         "total": { "type": "boolean" },
@@ -199,6 +202,19 @@
         "value": { "type": "string" },
         "min": { "type": "string" },
         "max": { "type": "string" }
+      }
+    },
+    "RowHeader": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "classes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "attributes": { "$ref": "#/definitions/StringMap" },
+        "align": { "type": "string", "enum": ["left", "center", "right"] },
+        "valign": { "type": "string", "enum": ["top", "middle", "bottom"] }
       }
     },
     "Figure": {

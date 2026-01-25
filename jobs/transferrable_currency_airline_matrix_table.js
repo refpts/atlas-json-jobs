@@ -18,6 +18,8 @@ const TABLE_SETTINGS = {
   filters: {
     enabled: true,
     search: true,
+    columns: "list",
+    expand: "none",
   },
   density: "compact",
 };
@@ -118,7 +120,7 @@ const job = {
         key: "program",
         label: "Program",
         sort: { enabled: false },
-        align: "left",
+        align: "center",
         valign: "middle",
         width: { value: ROW_HEADER_WIDTH },
       },
@@ -146,6 +148,7 @@ const job = {
     const cellMap = new Map();
     const columnCounts = new Map();
     let totalCount = 0;
+    const rowHeaderSpec = { align: "left", valign: "middle" };
 
     transferRows.forEach((row) => {
       if (!rowMap.has(row.to_id)) {
@@ -172,15 +175,25 @@ const job = {
       )
       .map((row) => {
         const label = [
-          `<strong>${escapeHtml(row.companyName)}</strong>`,
-          `<small>${escapeHtml(row.loyaltyName)}</small>`,
-        ].join("<br>");
+          `<span class="rp-table__row-title">${escapeHtml(
+            row.companyName,
+          )}</span>`,
+          `<span class="rp-table__row-subtitle">${escapeHtml(
+            row.loyaltyName,
+          )}</span>`,
+        ].join("");
 
         let rowCount = 0;
         const cells = sources.map((source) => {
           const transfer = cellMap.get(`${source.id}:${row.id}`);
           if (!transfer) {
-            return { value: "", sort: { primary: "" }, filter: { value: "" } };
+            return {
+              value: "",
+              sort: { primary: "" },
+              filter: { value: "" },
+              align: "center",
+              valign: "middle",
+            };
           }
 
           rowCount += 1;
@@ -197,6 +210,9 @@ const job = {
           const primary = parseSortNumber(transfer.decimalExpression);
           const secondary =
             transfer.speedHours == null ? null : Number(transfer.speedHours);
+          const filterParts = [];
+          if (primary != null && primary !== "") filterParts.push(primary);
+          if (secondary != null && secondary !== "") filterParts.push(secondary);
 
           return {
             value,
@@ -205,19 +221,24 @@ const job = {
               secondary,
             },
             filter: {
-              value: primary == null ? "" : primary,
+              value: filterParts.join(" "),
             },
+            align: "center",
+            valign: "middle",
           };
         });
 
         cells.push({
           value: String(rowCount),
           sort: { primary: rowCount },
+          align: "center",
+          valign: "middle",
         });
 
         return {
           label,
           cells,
+          header: rowHeaderSpec,
           valign: "middle",
         };
       });
@@ -227,17 +248,22 @@ const job = {
       return {
         value: String(count),
         sort: { primary: count },
+        align: "center",
+        valign: "middle",
       };
     });
     totalRowCells.push({
       value: String(totalCount),
       sort: { primary: totalCount },
+      align: "center",
+      valign: "middle",
     });
 
     rows.push({
       label: "Total",
       total: true,
       cells: totalRowCells,
+      header: rowHeaderSpec,
       valign: "middle",
     });
 

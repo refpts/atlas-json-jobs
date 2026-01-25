@@ -86,8 +86,11 @@ Add classes to the `<table>` element to opt into behaviors. You can combine them
   - `data-heat-scope="column"`
 
 ### Filters
-- Add `table-filters` to the `<table>` to enable the filter UI
-- For search bar in filters, add `data-rp-search="1"` to the `<table>`
+- Add `rp-table--filterable` to the `<figure>` to enable the filter UI
+- Configure filter UI on the `<figure>`:
+  - `data-filter-search="true"` to enable the search bar
+  - `data-filter-columns="list|none"` to control the Columns toggle
+  - `data-filter-expand="none|all"` to control default expansion
 
 ---
 
@@ -190,13 +193,13 @@ Every sortable cell **must** include `data-sort-value` (and optionally `data-sor
 
 ## 8) Filtering (Parameters & Columns)
 
-When `table-filters` is enabled, filters are generated per column. You can influence filter type by column content:
+When `rp-table--filterable` is enabled on the `<figure>`, filters are generated per column. You can influence filter type by column content:
 
 - **Numeric range**: numeric values (or formatted columns using `column-format-*`)
 - **Date range**: date-formatted values
 - **Discrete values**: repeated string values
 
-For search bar, add `data-rp-search="1"` to the `<table>`; search is case‑insensitive and filters rows.
+For search bar, add `data-filter-search="true"` to the `<figure>`; search is case-insensitive and filters rows.
 
 Hidden rows/columns:
 - Hidden rows/columns are excluded from filter options.
@@ -292,10 +295,10 @@ Use exactly one of:
 ## 13) Example: All Features Table
 
 ```html
-<figure class="rp-table table-heatmap-red-green" data-heat-scope="row">
+<figure class="rp-table rp-table--filterable table-heatmap-red-green" data-filter-search="true" data-filter-columns="list" data-filter-expand="none">
   <div class="rp-table__card">
     <div class="rp-table__scroll">
-      <table class="table-sort-columns table-sort-rows table-reorder-both table-resize-both table-density-comfortable" data-rp-search="1">
+      <table class="table-sort-columns table-sort-rows table-reorder-both table-resize-both table-density-comfortable" data-heat-scope="row">
         <thead>
           <tr>
             <th>Program</th>
@@ -391,10 +394,10 @@ Example (column‑level rounding to nearest 10 dollars):
 ### 15.2) Filters (Number, Date, Select) + Search
 
 ```html
-<figure class="rp-table">
+<figure class="rp-table rp-table--filterable" data-filter-search="true" data-filter-columns="list" data-filter-expand="none">
   <div class="rp-table__card">
     <div class="rp-table__scroll">
-      <table class="table-filters table-sort-columns" data-rp-search="1">
+      <table class="table-sort-columns">
         <thead>
           <tr>
             <th>Program</th>
@@ -590,7 +593,6 @@ This section defines a **canonical JSON schema** that can be converted into the 
     "figcaption": "Last updated January 18, 2026 at 18:05 ET",
     "classes": ["table-sort-columns", "table-density-comfortable"],
     "attributes": {
-      "data-rp-search": "1",
       "data-heat-scope": "row"
     },
     "settings": {
@@ -660,8 +662,10 @@ Use `settings` to generate classes/attributes automatically:
 - `width: "max-content"` → add `table-width-max-content`
 - `heatmap.scheme: "one"|"two"|"red-green"` → add figure class `table-heatmap-*` or `data-rp-heatmap`
 - `heatmap.scope: "table"|"row"|"column"` → add `data-heat-scope`
-- `filters.enabled: true` → add `table-filters`
-- `filters.search: true` → add `data-rp-search="1"`
+- `filters.enabled: true` → add figure class `rp-table--filterable`
+- `filters.search: true` → add `data-filter-search="true"` on the figure
+- `filters.columns: "list|none"` → add `data-filter-columns="..."` on the figure
+- `filters.expand: "none|all"` → add `data-filter-expand="..."` on the figure
 
 If `classes` / `attributes` conflict with derived settings, **explicit classes/attributes win**.
 
@@ -730,6 +734,10 @@ Each row becomes a `<tr>` in `<tbody>`.
 {
   "key": "row-001",
   "label": "Chase Sapphire",
+  "header": {
+    "align": "left",
+    "valign": "middle"
+  },
   "classes": [],
   "attributes": {},
   "total": false,
@@ -748,10 +756,11 @@ Each row becomes a `<tr>` in `<tbody>`.
 
 | Field | Notes |
 |------|------|
-| `label` | If provided, used for the first cell with `<th scope="row">`.
-| `total` | If true, add `table-total-row` class.
-| `align` / `valign` | Adds `row-align-*` / `row-valign-*` classes.
-| `height` | Adds `row-height` / `row-min-height` / `row-max-height` classes + vars.
+| `label` | If provided, used for the first cell with `<th scope="row">`. |
+| `header` | Optional overrides for the row header cell (classes/attributes/align/valign). |
+| `total` | If true, add `table-total-row` class. |
+| `align` / `valign` | Adds `row-align-*` / `row-valign-*` classes. |
+| `height` | Adds `row-height` / `row-min-height` / `row-max-height` classes + vars. |
 
 ---
 

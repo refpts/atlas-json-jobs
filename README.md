@@ -172,8 +172,10 @@ or attribute is already explicitly set in `table.classes` or
 | `density: "roomy"` | add `table-density-roomy` |
 | `layout: "fixed"` | add `table-layout-fixed` |
 | `width: "max-content"` | add `table-width-max-content` |
-| `filters.enabled: true` | add `table-filters` |
-| `filters.search: true` | add `data-rp-search="1"` |
+| `filters.enabled: true` | add figure class `rp-table--filterable` |
+| `filters.search: true` | add `data-filter-search="true"` on the figure |
+| `filters.columns: "list|none"` | add `data-filter-columns="..."` on the figure |
+| `filters.expand: "none|all"` | add `data-filter-expand="..."` on the figure |
 | `heatmap.scheme` | add figure class `table-heatmap-*` |
 | `heatmap.scope` | add `data-heat-scope="<scope>"` on table |
 
@@ -209,6 +211,7 @@ Row-level options:
 - `total: true` -> `table-total-row`
 - `align` / `valign` -> `row-align-*` / `row-valign-*`
 - `height` -> `row-height`, `row-min-height`, `row-max-height` plus CSS vars
+- `header` -> overrides for the row header cell (classes/attributes/align/valign)
 
 Row sorting note:
 - If table rows are sortable, every row must have a `label`. The generator
@@ -290,7 +293,7 @@ const html = generateTableHtml({
 - Omitting `sort.primary` while enabling column sorting.
 - Forgetting row labels when row sorting is enabled.
 - Miscounting row cells when `row.label` is present.
-- Putting feature classes on `<figure>` instead of `<table>`.
+- Putting table-level feature classes on `<figure>` instead of `<table>` (filters + heatmap belong on `<figure>`).
 
 ### Extended example (JSON -> HTML)
 
@@ -398,10 +401,10 @@ JSON input:
 HTML output:
 
 ```html
-<figure class="rp-table table-heatmap-red-green" data-rp-table-id="sample-table">
+<figure class="rp-table rp-table--filterable table-heatmap-red-green" data-rp-table-id="sample-table" data-filter-search="true" data-filter-columns="list" data-filter-expand="none">
   <div class="rp-table__card">
     <div class="rp-table__scroll">
-      <table class="table-sort-columns table-sort-rows table-reorder-both table-resize-both table-density-comfortable table-layout-fixed table-width-max-content table-filters" data-rp-search="1" data-heat-scope="row">
+      <table class="table-sort-columns table-sort-rows table-reorder-both table-resize-both table-density-comfortable table-layout-fixed table-width-max-content" data-heat-scope="row">
         <thead>
           <tr>
             <th data-col-key="program">Program</th>
