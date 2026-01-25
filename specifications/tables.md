@@ -18,6 +18,7 @@ Every table **must** use the following wrapper hierarchy **exactly**:
       </table>
     </div>
   </div>
+  <figcaption>Last updated January 18, 2026 at 18:05 ET</figcaption>
 </figure>
 ```
 
@@ -25,6 +26,8 @@ Notes:
 - The `rp-table` wrapper provides card styling and scrolling.
 - The `rp-table__scroll` wrapper enables horizontal scrolling when needed.
 - All additional table classes go on the `<table>` element (unless explicitly noted otherwise).
+- **Do not** use `<caption>` inside the table. Use `<figcaption>` only.
+- Use `kg-width-wide` or `kg-width-full` on the `<figure>` to control layout width when needed.
 
 ---
 
@@ -324,6 +327,7 @@ Use exactly one of:
       </table>
     </div>
   </div>
+  <figcaption>Last updated January 18, 2026 at 18:05 ET</figcaption>
 </figure>
 ```
 
@@ -380,6 +384,7 @@ Example (column‑level rounding to nearest 10 dollars):
       </table>
     </div>
   </div>
+  <figcaption>Last updated January 18, 2026 at 18:05 ET</figcaption>
 </figure>
 ```
 
@@ -418,6 +423,7 @@ Example (column‑level rounding to nearest 10 dollars):
       </table>
     </div>
   </div>
+  <figcaption>Last updated January 18, 2026 at 18:05 ET</figcaption>
 </figure>
 ```
 
@@ -453,6 +459,7 @@ Example (column‑level rounding to nearest 10 dollars):
       </table>
     </div>
   </div>
+  <figcaption>Last updated January 18, 2026 at 18:05 ET</figcaption>
 </figure>
 ```
 
@@ -485,6 +492,7 @@ Example (column‑level rounding to nearest 10 dollars):
       </table>
     </div>
   </div>
+  <figcaption>Last updated January 18, 2026 at 18:05 ET</figcaption>
 </figure>
 ```
 
@@ -523,6 +531,7 @@ Example (column‑level rounding to nearest 10 dollars):
       </table>
     </div>
   </div>
+  <figcaption>Last updated January 18, 2026 at 18:05 ET</figcaption>
 </figure>
 ```
 
@@ -535,6 +544,7 @@ Example (column‑level rounding to nearest 10 dollars):
 - Using `<td>` for row headers instead of `<th scope="row">`
 - Leaving out `<thead>` / `<tbody>`
 - Supplying distribution cells with fewer or unordered values
+- Omitting the required `<figcaption>`
 
 ---
 
@@ -577,7 +587,7 @@ This section defines a **canonical JSON schema** that can be converted into the 
 {
   "table": {
     "id": "optional-unique-id",
-    "caption": "optional caption text",
+    "figcaption": "Last updated January 18, 2026 at 18:05 ET",
     "classes": ["table-sort-columns", "table-density-comfortable"],
     "attributes": {
       "data-rp-search": "1",
@@ -611,12 +621,31 @@ This section defines a **canonical JSON schema** that can be converted into the 
 | Field | Type | Required | Notes |
 |------|------|----------|------|
 | `id` | string | no | Optional; used for external references |
-| `caption` | string | no | Rendered as `<caption>` if provided |
+| `caption` | string | no | Deprecated; use `figcaption` instead |
+| `figcaption` | string | no | Rendered as `<figcaption>` (recommended) |
+| `figure` | object | no | Figure-level classes/attributes |
 | `classes` | string[] | no | Direct classes on `<table>` |
 | `attributes` | object | no | Direct attributes on `<table>` (string values only) |
 | `settings` | object | no | High-level convenience settings (converted into classes/attributes) |
 | `columns` | array | **yes** | Column definitions, in display order |
 | `rows` | array | **yes** | Row definitions, in display order |
+
+#### 18.2.1) Figure Configuration
+
+Use the `figure` object to add classes or attributes to the `<figure>` wrapper.
+This is how you opt into Ghost layout widths such as `kg-width-wide` or
+`kg-width-full`.
+
+```json
+{
+  "figure": {
+    "classes": ["kg-width-wide"],
+    "attributes": {
+      "data-rp-table-id": "transferrable_currency_airline_matrix_table"
+    }
+  }
+}
+```
 
 ### 18.3) `settings` Mapping Rules
 
@@ -785,19 +814,23 @@ Each cell maps to `<td>` (or the row header `<th scope="row">`).
 ## 22) Serialization Rules (JSON → HTML)
 
 1. **Initialize `<table>`** with classes and attributes from `table.classes` and `table.attributes`.
-2. **Apply `settings`** to add/derive classes + attributes (do not override explicit `classes/attributes`).
-3. **Build `<thead>`** from `columns`:
+2. **Initialize `<figure>`** with the default `rp-table` class plus any `table.figure.classes` and `table.figure.attributes`.
+3. **Apply `settings`** to add/derive classes + attributes (do not override explicit `classes/attributes`).
+4. **Build `<thead>`** from `columns`:
    - Apply `data-col-key` from `column.key`.
    - Add column classes from `align`, `valign`, `format`, `filter`, `distribution`, `total`, `width`.
-4. **Build `<tbody>`** from `rows`:
+5. **Build `<tbody>`** from `rows`:
    - If `row.label` exists, render as `<th scope="row">` in first cell.
    - Apply row classes/attributes (alignment, height, totals).
-5. **Cells**:
+6. **Cells**:
    - Render `value` as text content.
    - Always add `data-sort-value` for sortable columns.
    - Add formatting + filter + heat + distribution attributes if provided.
-6. **Distribution columns**:
+7. **Distribution columns**:
    - Render 5 values as a comma‑delimited `$` list in the cell.
+8. **Figcaption**:
+   - Render `<figcaption>` if `table.figcaption` (or legacy `caption`) is provided.
+   - Do not render `<caption>` inside the table.
 
 ---
 
@@ -860,4 +893,3 @@ Each cell maps to `<td>` (or the row header `<th scope="row">`).
 - Using fewer/more than 5 values for distribution cells
 - Forgetting to mark totals as `total: true`
 - Using inconsistent row lengths (cells count must match columns count)
-

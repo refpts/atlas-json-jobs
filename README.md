@@ -124,6 +124,7 @@ The generator always returns:
       <table>...</table>
     </div>
   </div>
+  <figcaption>Last updated January 18, 2026 at 18:05 ET</figcaption>
 </figure>
 ```
 
@@ -131,6 +132,24 @@ Notes:
 - `data-rp-table-id` is added **only** when `table.id` is provided.
 - Additional heatmap classes may be added to the `<figure>`.
 - All other feature classes are added to the `<table>`.
+- Use `table.figure.classes` to apply `kg-width-wide` or `kg-width-full`.
+- The generator does not render `<caption>` inside the table.
+
+### Figure configuration
+
+To control figure-level layout (Ghost widths) or add figure attributes, use the
+`figure` object on the table:
+
+```json
+{
+  "figure": {
+    "classes": ["kg-width-wide"],
+    "attributes": {
+      "data-rp-table-id": "transferrable_currency_airline_matrix_table"
+    }
+  }
+}
+```
 
 ### Settings to class/attribute mapping
 
@@ -285,7 +304,7 @@ JSON input:
 {
   "table": {
     "id": "sample-table",
-    "caption": "Table last updated on 2026-01-18T23:05:00Z",
+    "figcaption": "Last updated January 18, 2026 at 18:05 ET",
     "settings": {
       "sortableColumns": true,
       "sortableRows": true,
@@ -383,7 +402,6 @@ HTML output:
   <div class="rp-table__card">
     <div class="rp-table__scroll">
       <table class="table-sort-columns table-sort-rows table-reorder-both table-resize-both table-density-comfortable table-layout-fixed table-width-max-content table-filters" data-rp-search="1" data-heat-scope="row">
-        <caption>Table last updated on 2026-01-18T23:05:00Z</caption>
         <thead>
           <tr>
             <th data-col-key="program">Program</th>
@@ -412,5 +430,6 @@ HTML output:
       </table>
     </div>
   </div>
+  <figcaption>Last updated January 18, 2026 at 18:05 ET</figcaption>
 </figure>
 ```

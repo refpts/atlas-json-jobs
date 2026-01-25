@@ -13,6 +13,8 @@ const SOURCE_PROGRAMS = [
 
 const TABLE_SETTINGS = {
   sortableColumns: true,
+  sortableRows: true,
+  reorder: "both",
   density: "compact",
 };
 
@@ -32,7 +34,10 @@ const job = {
     tableId: "transferrable_currency_airline_matrix_table",
   },
   table: {
-    caption: "Table last updated on {{generated_at}}",
+    figcaption: "Last updated {{published}} ET",
+    figure: {
+      classes: ["kg-width-wide"],
+    },
     settings: TABLE_SETTINGS,
   },
   fetchData: async (pool) => {
@@ -111,10 +116,18 @@ const job = {
         label: source.name,
         sort: { enabled: true },
       })),
+      {
+        key: "total",
+        label: "Total",
+        sort: { enabled: true },
+        total: true,
+      },
     ];
 
     const rowMap = new Map();
     const cellMap = new Map();
+    const columnCounts = new Map();
+    let totalCount = 0;
 
     transferRows.forEach((row) => {
       if (!rowMap.has(row.to_id)) {
@@ -145,11 +158,19 @@ const job = {
           escapeHtml(row.loyaltyName),
         ].join("<br>");
 
+        let rowCount = 0;
         const cells = sources.map((source) => {
           const transfer = cellMap.get(`${source.id}:${row.id}`);
           if (!transfer) {
             return { value: "", sort: { primary: "" } };
           }
+
+          rowCount += 1;
+          totalCount += 1;
+          columnCounts.set(
+            source.id,
+            (columnCounts.get(source.id) || 0) + 1,
+          );
 
           const value = transfer.speed
             ? `${escapeHtml(transfer.rate)}<br>${escapeHtml(transfer.speed)}`
@@ -168,8 +189,38 @@ const job = {
           };
         });
 
-        return { label, cells };
+        cells.push({
+          value: String(rowCount),
+          sort: { primary: rowCount },
+        });
+
+        return {
+          label,
+          cells,
+          align: "center",
+          valign: "middle",
+        };
       });
+
+    const totalRowCells = sources.map((source) => {
+      const count = columnCounts.get(source.id) || 0;
+      return {
+        value: String(count),
+        sort: { primary: count },
+      };
+    });
+    totalRowCells.push({
+      value: String(totalCount),
+      sort: { primary: totalCount },
+    });
+
+    rows.push({
+      label: "Total",
+      total: true,
+      cells: totalRowCells,
+      align: "center",
+      valign: "middle",
+    });
 
     return {
       ...job.table,

@@ -20,6 +20,8 @@
       "properties": {
         "id": { "type": "string" },
         "caption": { "type": "string" },
+        "figcaption": { "type": "string" },
+        "figure": { "$ref": "#/definitions/Figure" },
         "classes": {
           "type": "array",
           "items": { "type": "string" }
@@ -197,6 +199,17 @@
         "value": { "type": "string" },
         "min": { "type": "string" },
         "max": { "type": "string" }
+      }
+    },
+    "Figure": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "classes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "attributes": { "$ref": "#/definitions/StringMap" }
       }
     }
   }
