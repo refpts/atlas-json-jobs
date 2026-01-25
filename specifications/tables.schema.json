@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tables.schema.json",
+  "title": "Format Theme Table JSON",
+  "type": "object",
+  "required": ["table"],
+  "additionalProperties": false,
+  "properties": {
+    "table": { "$ref": "#/definitions/Table" }
+  },
+  "definitions": {
+    "StringMap": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "Table": {
+      "type": "object",
+      "required": ["columns", "rows"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "caption": { "type": "string" },
+        "classes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "attributes": { "$ref": "#/definitions/StringMap" },
+        "settings": { "$ref": "#/definitions/TableSettings" },
+        "columns": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Column" },
+          "minItems": 1
+        },
+        "rows": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Row" },
+          "minItems": 1
+        }
+      }
+    },
+    "TableSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sortableColumns": { "type": "boolean" },
+        "sortableRows": { "type": "boolean" },
+        "reorder": { "type": "string", "enum": ["columns", "rows", "both", "none"] },
+        "resize": { "type": "string", "enum": ["columns", "rows", "both", "none"] },
+        "density": { "type": "string", "enum": ["compact", "comfortable", "roomy"] },
+        "layout": { "type": "string", "enum": ["fixed", "auto"] },
+        "width": { "type": "string", "enum": ["max-content", "auto"] },
+        "heatmap": { "$ref": "#/definitions/HeatmapSettings" },
+        "filters": { "$ref": "#/definitions/FilterSettings" }
+      }
+    },
+    "HeatmapSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scheme": { "type": "string", "enum": ["one", "two", "red-green", "none"] },
+        "scope": { "type": "string", "enum": ["table", "row", "column"] }
+      }
+    },
+    "FilterSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "search": { "type": "boolean" }
+      }
+    },
+    "Column": {
+      "type": "object",
+      "required": ["key", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string" },
+        "label": { "type": "string" },
+        "classes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "attributes": { "$ref": "#/definitions/StringMap" },
+        "align": { "type": "string", "enum": ["left", "center", "right"] },
+        "valign": { "type": "string", "enum": ["top", "middle", "bottom"] },
+        "width": { "$ref": "#/definitions/Dimension" },
+        "format": { "$ref": "#/definitions/Format" },
+        "filter": { "$ref": "#/definitions/Filter" },
+        "sort": { "$ref": "#/definitions/SortSettings" },
+        "total": { "type": "boolean" },
+        "distribution": { "type": "boolean" }
+      }
+    },
+    "Row": {
+      "type": "object",
+      "required": ["cells"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string" },
+        "label": { "type": "string", "description": "If present, becomes <th scope=\"row\"> in the first column. Cells should then map to remaining columns." },
+        "classes": { "type": "array", "items": { "type": "string" } },
+        "attributes": { "$ref": "#/definitions/StringMap" },
+        "total": { "type": "boolean" },
+        "align": { "type": "string", "enum": ["left", "center", "right"] },
+        "valign": { "type": "string", "enum": ["top", "middle", "bottom"] },
+        "height": { "$ref": "#/definitions/Dimension" },
+        "cells": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Cell" }
+        }
+      }
+    },
+    "Cell": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": ["string", "number", "boolean"] },
+        "raw": { "type": ["number", "string", "null"] },
+        "classes": { "type": "array", "items": { "type": "string" } },
+        "attributes": { "$ref": "#/definitions/StringMap" },
+        "align": { "type": "string", "enum": ["left", "center", "right"] },
+        "valign": { "type": "string", "enum": ["top", "middle", "bottom"] },
+        "format": { "$ref": "#/definitions/Format" },
+        "sort": { "$ref": "#/definitions/Sort" },
+        "filter": { "$ref": "#/definitions/FilterValue" },
+        "heat": { "$ref": "#/definitions/HeatValue" },
+        "distribution": { "$ref": "#/definitions/Distribution" }
+      }
+    },
+    "Format": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "enum": ["number", "dollars", "percent", "points", "miles"] },
+        "decimals": { "type": ["integer", "null"], "minimum": 0 },
+        "round": { "type": ["number", "null"], "exclusiveMinimum": 0 }
+      }
+    },
+    "Filter": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "enum": ["number", "date", "select"] },
+        "defaultHidden": { "type": "boolean" }
+      }
+    },
+    "SortSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "Sort": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary": { "type": ["number", "string"] },
+        "secondary": { "type": ["number", "string", "null"] }
+      }
+    },
+    "FilterValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": ["string", "number", "boolean"] },
+        "label": { "type": "string" },
+        "type": { "type": "string", "enum": ["number", "date", "select"] },
+        "skip": { "type": "boolean" }
+      }
+    },
+    "HeatValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "number" },
+        "min": { "type": ["number", "null"] },
+        "max": { "type": ["number", "null"] }
+      }
+    },
+    "Distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "values": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 5,
+          "maxItems": 5
+        }
+      }
+    },
+    "Dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "string" },
+        "min": { "type": "string" },
+        "max": { "type": "string" }
+      }
+    }
+  }
+}

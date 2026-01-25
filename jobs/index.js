@@ -1,18 +1,8 @@
-const cards_hourly = require("./cards_hourly");
-const transferrable_currency_airline_matrix = require("./transferrable_currency_airline_matrix");
-const transferrable_currency_hotel_matrix = require("./transferrable_currency_hotel_matrix");
-const transferrable_currency_requirements = require("./transferrable_currency_requirements");
-const currency_conversions = require("./currency_conversions");
+const transferrable_currency_airline_matrix_table = require("./transferrable_currency_airline_matrix_table");
 
 const JOBS = {
-  [cards_hourly.name]: cards_hourly,
-  [transferrable_currency_airline_matrix.name]:
-    transferrable_currency_airline_matrix,
-  [transferrable_currency_hotel_matrix.name]:
-    transferrable_currency_hotel_matrix,
-  [transferrable_currency_requirements.name]:
-    transferrable_currency_requirements,
-  [currency_conversions.name]: currency_conversions,
+  [transferrable_currency_airline_matrix_table.name]:
+    transferrable_currency_airline_matrix_table,
 };
 
 function getJob(name) {
@@ -22,7 +12,7 @@ function getJob(name) {
 }
 
 function getAllJobs() {
-  return Object.values(JOBS);
+  return Object.values(JOBS).filter((job) => job.includeInAll !== false);
 }
 
 module.exports = { getJob, getAllJobs };
