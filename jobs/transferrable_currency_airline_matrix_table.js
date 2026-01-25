@@ -16,11 +16,11 @@ const TABLE_SETTINGS = {
   sortableRows: true,
   reorder: "both",
   density: "compact",
-  layout: "fixed",
+  width: "max-content",
 };
 
-const ROW_HEADER_WIDTH = "min(200px, 33vw)";
-const DATA_COLUMN_MIN_WIDTH = "120px";
+const ROW_HEADER_MAX_WIDTH = "min(200px, 33vw)";
+const DATA_COLUMN_WIDTH = "120px";
 const TOTAL_COLUMN_WIDTH = "96px";
 
 const job = {
@@ -110,7 +110,6 @@ const job = {
     return { sources, transferRows };
   },
   buildTable: ({ sources, transferRows }) => {
-    const dataColumnWidth = `calc((100% - ${ROW_HEADER_WIDTH} - ${TOTAL_COLUMN_WIDTH}) / ${sources.length})`;
     const columns = [
       {
         key: "program",
@@ -118,7 +117,7 @@ const job = {
         sort: { enabled: false },
         align: "center",
         valign: "middle",
-        width: { value: ROW_HEADER_WIDTH },
+        width: { max: ROW_HEADER_MAX_WIDTH },
       },
       ...sources.map((source) => ({
         key: normalizeKey(source.name),
@@ -126,7 +125,7 @@ const job = {
         sort: { enabled: true },
         align: "center",
         valign: "middle",
-        width: { value: dataColumnWidth, min: DATA_COLUMN_MIN_WIDTH },
+        width: { value: DATA_COLUMN_WIDTH },
       })),
       {
         key: "total",
