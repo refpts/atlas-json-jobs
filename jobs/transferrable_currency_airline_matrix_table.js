@@ -15,17 +15,12 @@ const TABLE_SETTINGS = {
   sortableColumns: true,
   sortableRows: true,
   reorder: "both",
-  filters: {
-    enabled: true,
-    search: true,
-    columns: "list",
-    expand: "none",
-  },
   density: "compact",
+  layout: "fixed",
 };
 
-const ROW_HEADER_WIDTH = "200px";
-const DATA_COLUMN_WIDTH = "140px";
+const ROW_HEADER_WIDTH = "min(200px, 33vw)";
+const DATA_COLUMN_MIN_WIDTH = "120px";
 const TOTAL_COLUMN_WIDTH = "96px";
 
 const job = {
@@ -115,6 +110,7 @@ const job = {
     return { sources, transferRows };
   },
   buildTable: ({ sources, transferRows }) => {
+    const dataColumnWidth = `calc((100% - ${ROW_HEADER_WIDTH} - ${TOTAL_COLUMN_WIDTH}) / ${sources.length})`;
     const columns = [
       {
         key: "program",
@@ -130,8 +126,7 @@ const job = {
         sort: { enabled: true },
         align: "center",
         valign: "middle",
-        width: { value: DATA_COLUMN_WIDTH },
-        filter: { type: "number" },
+        width: { value: dataColumnWidth, min: DATA_COLUMN_MIN_WIDTH },
       })),
       {
         key: "total",
@@ -190,7 +185,6 @@ const job = {
             return {
               value: "",
               sort: { primary: "" },
-              filter: { value: "" },
               align: "center",
               valign: "middle",
             };
@@ -210,18 +204,11 @@ const job = {
           const primary = parseSortNumber(transfer.decimalExpression);
           const secondary =
             transfer.speedHours == null ? null : Number(transfer.speedHours);
-          const filterParts = [];
-          if (primary != null && primary !== "") filterParts.push(primary);
-          if (secondary != null && secondary !== "") filterParts.push(secondary);
-
           return {
             value,
             sort: {
               primary: primary == null ? "" : primary,
               secondary,
-            },
-            filter: {
-              value: filterParts.join(" "),
             },
             align: "center",
             valign: "middle",
