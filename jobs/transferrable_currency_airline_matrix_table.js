@@ -15,8 +15,16 @@ const TABLE_SETTINGS = {
   sortableColumns: true,
   sortableRows: true,
   reorder: "both",
+  filters: {
+    enabled: true,
+    search: true,
+  },
   density: "compact",
 };
+
+const ROW_HEADER_WIDTH = "200px";
+const DATA_COLUMN_WIDTH = "140px";
+const TOTAL_COLUMN_WIDTH = "96px";
 
 const job = {
   name: "transferrable_currency_airline_matrix_table",
@@ -110,17 +118,27 @@ const job = {
         key: "program",
         label: "Program",
         sort: { enabled: false },
+        align: "left",
+        valign: "middle",
+        width: { value: ROW_HEADER_WIDTH },
       },
       ...sources.map((source) => ({
         key: normalizeKey(source.name),
         label: source.name,
         sort: { enabled: true },
+        align: "center",
+        valign: "middle",
+        width: { value: DATA_COLUMN_WIDTH },
+        filter: { type: "number" },
       })),
       {
         key: "total",
         label: "Total",
         sort: { enabled: true },
         total: true,
+        align: "center",
+        valign: "middle",
+        width: { value: TOTAL_COLUMN_WIDTH },
       },
     ];
 
@@ -155,14 +173,14 @@ const job = {
       .map((row) => {
         const label = [
           `<strong>${escapeHtml(row.companyName)}</strong>`,
-          escapeHtml(row.loyaltyName),
+          `<small>${escapeHtml(row.loyaltyName)}</small>`,
         ].join("<br>");
 
         let rowCount = 0;
         const cells = sources.map((source) => {
           const transfer = cellMap.get(`${source.id}:${row.id}`);
           if (!transfer) {
-            return { value: "", sort: { primary: "" } };
+            return { value: "", sort: { primary: "" }, filter: { value: "" } };
           }
 
           rowCount += 1;
@@ -186,6 +204,9 @@ const job = {
               primary: primary == null ? "" : primary,
               secondary,
             },
+            filter: {
+              value: primary == null ? "" : primary,
+            },
           };
         });
 
@@ -197,7 +218,6 @@ const job = {
         return {
           label,
           cells,
-          align: "center",
           valign: "middle",
         };
       });
@@ -218,7 +238,6 @@ const job = {
       label: "Total",
       total: true,
       cells: totalRowCells,
-      align: "center",
       valign: "middle",
     });
 
