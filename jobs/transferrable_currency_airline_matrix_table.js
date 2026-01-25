@@ -41,7 +41,7 @@ const job = {
   table: {
     figcaption: "Last updated {{published}} ET",
     figure: {
-      classes: ["kg-width-wide"],
+      classes: ["kg-width-wide", "table-card-centered"],
     },
     settings: TABLE_SETTINGS,
   },
