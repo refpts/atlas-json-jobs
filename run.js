@@ -4,9 +4,24 @@ const { putJson } = require("./lib/spaces");
 const { buildEnvelope } = require("./lib/envelope");
 
 async function runJob(job) {
+  if (!job || typeof job !== "object") {
+    throw new Error("Job config is required.");
+  }
+  if (typeof job.run !== "function") {
+    throw new Error(`Job "${job.name || "unknown"}" is missing a run() method.`);
+  }
+
   if (job.output && job.output.skipUpload) {
+    // New pipeline jobs handle their own uploads.
     await job.run();
     return;
+  }
+
+  if (!job.output) {
+    throw new Error(`Job "${job.name || "unknown"}" is missing output config.`);
+  }
+  if (!job.output.key) {
+    throw new Error(`Job "${job.name || "unknown"}" is missing output.key.`);
   }
 
   const space = job.output.space || "public";
@@ -34,7 +49,9 @@ async function runJob(job) {
     cacheControl: job.output.cacheControl,
   });
 
-  console.log(`[${job.name}] uploaded s3://${result.bucket}/${result.key} (${result.bytes} bytes)`);
+  console.log(
+    `[${job.name}] uploaded s3://${result.bucket}/${result.key} (${result.bytes} bytes)`,
+  );
 }
 
 async function main() {

@@ -2,6 +2,65 @@
 
 This repository organizes logic which refreshes a library of JSON files based on data stored in the Reference Points Atlas data model. This enables the data to be served statically via Ghost CMS.
 
+## System Overview
+
+This service runs on DigitalOcean App Platform (serverless) and performs a full
+data-to-table refresh on a schedule. Each job:
+
+1. Queries MySQL
+2. Builds a JSON table spec (plus metadata header)
+3. Publishes JSON to Spaces (for posterity)
+4. Generates HTML tables from the JSON spec
+5. Publishes HTML to Spaces
+6. Updates the target Ghost page/post by replacing a specific table
+
+### Core components
+
+- `run.js`: CLI entrypoint (run one job or all jobs).
+- `jobs/*.js`: job definitions (data fetch + table config).
+- `lib/table_pipeline.js`: orchestrates DB → JSON/HTML → Spaces → Ghost update.
+- `lib/table_generator.js`: JSON table spec → canonical HTML.
+- `lib/ghost.js`: fetch/replace/update Ghost HTML.
+- `lib/spaces.js`: publish JSON/HTML to DigitalOcean Spaces.
+- `lib/db.js`: MySQL connection pool and TLS handling.
+- `lib/envelope.js`: standard JSON header (author, disclosure, license, time).
+
+### End-to-end flow (artifacts)
+
+```
+Cron/Manual
+   |
+   v
+run.js -> job -> table_pipeline
+                |
+                +-> MySQL -> data -> buildTable() -> table spec
+                |                         |
+                |                         +-> envelope.json -> Spaces
+                |
+                +-> table_generator -> table.html -> Spaces
+                |
+                +-> Ghost fetch -> replace table -> update page/post
+```
+
+### Update sequence (per job)
+
+```
+run.js
+  -> job.fetchData(pool)
+  -> job.buildTable(data)
+  -> buildHeader() + envelope
+  -> putJson()
+  -> generateTableHtml()
+  -> putHtml()
+  -> updateTableBySlug()
+```
+
+### Artifacts and identifiers
+
+- **JSON envelope**: `header` + `contents.table` (table spec).
+- **HTML table**: `<figure data-rp-table-id="...">` plus required wrappers.
+- **Ghost lookup**: tables are replaced strictly by `data-rp-table-id`.
+
 ## Ghost CMS Service
 
 The Ghost service in `lib/ghost.js` fetches Ghost pages/posts, replaces a target
@@ -16,6 +75,7 @@ keeping the rest of the page intact.
   (`https://example.com`). The client will normalize to the admin base.
 - `GHOST_ADMIN_API_KEY`: Admin API key in `<id>:<secret>` format.
 - `GHOST_ADMIN_API_VERSION` (optional): Admin API version, defaults to `v5`.
+- `GHOST_ADMIN_API_TIMEOUT_MS` (optional): Request timeout in ms (default 15000).
 
 ### Core behaviors
 
@@ -52,6 +112,146 @@ async function run() {
 
 run().catch(console.error);
 ```
+
+## Table Pipeline Service
+
+The table pipeline in `lib/table_pipeline.js` is the default path for new table
+jobs. It orchestrates data fetching, JSON/HTML generation, Spaces publishing,
+and Ghost updates in a single flow.
+
+### Required job fields
+
+- `name`: unique job identifier (also used as the default table ID).
+- `output.jsonKey`: Spaces key for the JSON artifact.
+- `output.htmlKey`: Spaces key for the HTML artifact.
+- `fetchData(pool)` **or** `query` / `queryParams`: how to load data.
+- `buildTable(data, context)` **or** `table` + `buildRows(data, context)`:
+  how to produce the final table spec.
+
+### Optional job fields
+
+- `includeInAll`: set to `false` to exclude from `run.js all`.
+- `output.space`: `"public"` or `"private"` (default `"public"`).
+- `output.bucketEnv`: override bucket per job (env var name).
+- `output.cacheControl`: cache header for JSON/HTML uploads.
+- `output.skipUpload`: skip `run.js` uploads when the job handles its own.
+- `ghost.type`: `"page"` or `"post"`.
+- `ghost.slug`: Ghost slug to update.
+- `ghost.tableId`: explicit table identifier (defaults to `job.name`).
+- `table`: base table config (figure classes, settings, etc.).
+
+### Job skeleton
+
+```js
+const { runTablePipeline } = require("./lib/table_pipeline");
+
+const job = {
+  name: "transferrable_currency_airline_matrix_table",
+  includeInAll: true,
+  output: {
+    space: "public",
+    jsonKey: "transferrable_currency_airline_matrix.json",
+    htmlKey: "transferrable_currency_airline_matrix.html",
+    cacheControl: "public, max-age=300",
+    skipUpload: true
+  },
+  ghost: {
+    type: "page",
+    slug: "smoke-test",
+    tableId: "transferrable_currency_airline_matrix_table"
+  },
+  table: {
+    figcaption: "Last updated {{published}} ET",
+    figure: { classes: ["kg-width-wide"] },
+    settings: { sortableColumns: true, sortableRows: true }
+  },
+  fetchData: async (pool) => {
+    const [rows] = await pool.query("SELECT ...");
+    return { rows };
+  },
+  buildTable: ({ rows }) => ({
+    columns: [ ... ],
+    rows: [ ... ]
+  }),
+  run: async () => runTablePipeline(job)
+};
+
+module.exports = job;
+```
+
+### Pipeline behavior details
+
+- Data fetch uses a MySQL pool and always closes the pool (even on errors).
+- JSON is wrapped with a standardized header from `buildHeader()`.
+- JSON and HTML are published **before** the Ghost update so artifacts always
+  exist even if Ghost fails.
+- Ghost updates are strict: if the target table is missing or duplicated, the
+  job fails to avoid corrupting content.
+
+## Running Jobs
+
+Jobs are registered in `jobs/index.js` and can be executed via `run.js`:
+
+```bash
+node run.js transferrable_currency_airline_matrix_table
+node run.js all
+```
+
+Notes:
+- `all` runs every job with `includeInAll !== false`.
+- Table pipeline jobs typically set `output.skipUpload: true` because they
+  upload JSON/HTML internally.
+
+## Object Storage (Spaces)
+
+The Spaces client in `lib/spaces.js` uploads JSON/HTML to DigitalOcean Spaces.
+
+### Environment variables (Spaces)
+
+- `SPACES_PUBLIC_REGION`, `SPACES_PUBLIC_KEY`, `SPACES_PUBLIC_SECRET`,
+  `SPACES_PUBLIC_BUCKET` (preferred)
+- `SPACES_PRIVATE_REGION`, `SPACES_PRIVATE_KEY`, `SPACES_PRIVATE_SECRET`,
+  `SPACES_PRIVATE_BUCKET` (for private uploads)
+- Legacy public fallback: `SPACES_REGION`, `SPACES_KEY`, `SPACES_SECRET`,
+  `SPACES_BUCKET` (used only if public scoped vars are missing)
+
+### Access control defaults
+
+- Public scope defaults to `public-read`.
+- Private scope omits ACL unless explicitly provided.
+
+## Database (MySQL)
+
+`lib/db.js` expects these env vars:
+
+- `DB_HOST`
+- `DB_PORT`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_NAME`
+- `DB_CA_CERT` (optional; PEM string for TLS)
+
+## JSON Header Metadata
+
+Every JSON artifact is wrapped with a header from `lib/envelope.js`:
+
+```json
+{
+  "header": {
+    "author": "Reference Points",
+    "disclosure": "...",
+    "license_url": "https://...",
+    "published": "January 18, 2026 at 18:05",
+    "generated_at": "2026-01-18T23:05:00.000Z"
+  }
+}
+```
+
+Required env vars:
+
+- `HEADER_AUTHOR`
+- `HEADER_DISCLOSURE`
+- `HEADER_LICENSE_URL`
 
 ## Table Generator Service
 
