@@ -222,6 +222,20 @@ The Spaces client in `lib/spaces.js` uploads JSON/HTML to DigitalOcean Spaces.
 - `DB_NAME`
 - `DB_CA_CERT` (optional; PEM string for TLS)
 
+## Schema Snapshots
+
+Use `scripts/refresh_schema.sh` to capture schema metadata into the repo:
+
+- `specifications/schema.sql` (DDL only)
+- `specifications/schema_columns.tsv` (table/column dictionary)
+
+The script uses the same DB env vars as the app (`DB_HOST`, `DB_PORT`,
+`DB_USER`, `DB_PASSWORD`, `DB_NAME`, optional `DB_CA_CERT`).
+
+```bash
+./scripts/refresh_schema.sh
+```
+
 ## JSON Header Metadata
 
 Every JSON artifact is wrapped with a header from `lib/envelope.js`:

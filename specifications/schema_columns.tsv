@@ -1,0 +1,174 @@
+table_name	column_name	column_type	is_nullable	column_default	column_key	extra	column_comment
+Airline	id	int unsigned	NO	NULL	PRI	auto_increment	
+Airline	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+Airline	full_name	varchar(255)	NO	NULL			
+Airline	short_name	varchar(255)	YES	NULL			
+Airline	iata_code	varchar(255)	YES	NULL			
+Airline	icao_code	varchar(255)	YES	NULL			
+Airline	callsign	varchar(255)	YES	NULL			
+Airline	country_code	varchar(255)	YES	NULL			
+Airline	loyalty_program_id	int unsigned	YES	NULL	MUL		
+Airline	logo_url	varchar(512)	YES	NULL			
+Airline	website_url	varchar(512)	YES	NULL			
+Airline	notes	varchar(2048)	YES	NULL			
+AirlineAlliance	id	int unsigned	NO	NULL	PRI	auto_increment	
+AirlineAlliance	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+AirlineAlliance	full_name	varchar(255)	NO	NULL			
+AirlineAlliance	short_name	varchar(255)	NO	NULL			
+AirlineAlliance	alliance_code	varchar(255)	NO	NULL			
+AirlineAlliance	founded_date	date	NO	NULL			
+AirlineAlliance	is_active	tinyint(1)	NO	NULL			
+AirlineAlliance	website_url	varchar(512)	YES	NULL			
+AirlineAlliance	favicon_logo_url	varchar(512)	YES	NULL			
+AirlineAlliance	square_logo_url	varchar(512)	YES	NULL			
+AirlineAlliance	wide_logo_url	varchar(512)	YES	NULL			
+AirlineAlliance	notes	varchar(2048)	YES	NULL			
+AirlineAllianceMembership	id	int unsigned	NO	NULL	PRI	auto_increment	
+AirlineAllianceMembership	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+AirlineAllianceMembership	airline_id	int unsigned	YES	NULL	MUL		
+AirlineAllianceMembership	alliance_id	int unsigned	YES	NULL	MUL		
+AirlineAllianceMembership	is_active	tinyint(1)	YES	NULL			
+AirlineAllianceMembership	alliance_join_date	date	NO	NULL			
+AirlineAllianceMembership	alliance_leave_date	date	YES	NULL			
+AirlineAllianceMembership	notes	varchar(2048)	YES	NULL			
+AirlineAllianceStatusTier	id	int unsigned	NO	NULL	PRI	auto_increment	
+AirlineAllianceStatusTier	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+AirlineAllianceStatusTier	alliance_id	int unsigned	YES	NULL	MUL		
+AirlineAllianceStatusTier	tier_code	varchar(255)	YES	NULL			
+AirlineAllianceStatusTier	tier_full_name	varchar(255)	YES	NULL			
+AirlineAllianceStatusTier	tier_short_name	varchar(255)	YES	NULL			
+AirlineAllianceStatusTier	rank	smallint	YES	NULL			
+AirlineAllianceStatusTier	is_active	tinyint(1)	YES	NULL			
+AirlineAllianceStatusTier	website_url	varchar(512)	YES	NULL			
+AirlineEarnPartner	id	int unsigned	NO	NULL	PRI	auto_increment	
+AirlineEarnPartner	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+AirlineEliteStatus	id	int unsigned	NO	NULL	PRI	auto_increment	
+AirlineEliteStatus	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+AirlineRedeemPartner	id	int unsigned	NO	NULL	PRI	auto_increment	
+AirlineRedeemPartner	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+Bank	id	int unsigned	NO	NULL	PRI	auto_increment	
+Bank	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+Bank	name	varchar(255)	NO	NULL	UNI		
+Bank	logo_url	varchar(512)	YES	NULL			
+BenefitCredit	id	int unsigned	NO	NULL	PRI	auto_increment	
+BenefitCredit	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+Card	id	int unsigned	NO	NULL	PRI	auto_increment	
+Card	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+Card	proper_name	varchar(255)	NO	NULL	UNI		The formal name used when the banking institution refers to the credit card. Often quite long and can include various marks. If present, the name of the issuing bank is stripped
+Card	informal_name	varchar(255)	NO	NULL	UNI		The informal name typically used to refer to the card conversationally. This name is structured so that it can always be prepended with the issuing bank name, and can allways be appended with the word 'card'
+Card	abbreviation	varchar(255)	YES	NULL	UNI		The abbreviation for the card, if one is conventionally used (not typical)
+Card	demographic	enum('Personal','Business')	NO	NULL			Whether the card is a personal or business card
+Card	type	enum('Credit','Charge','Store')	NO	NULL			Whether the card is a credit card or charge card
+Card	secured	tinyint(1)	NO	NULL			Whether the card is a secured card
+Card	annual_fee	int	NO	NULL			The annual fee associated with the card, if it has one
+Card	availability	enum('Open','Product Change','Closed')	NO	NULL			Whether the card is presently open for applications; is not open for applications but can be product changed into; or the card is discontinued
+Card	processor_id	int unsigned	YES	NULL	MUL		The payment processer used for the card
+Card	processor_tier_id	int unsigned	YES	NULL			If applicable, the product tier assigned by the payment processer used for the card
+Card	bank_id	int unsigned	NO	NULL	MUL		The issuing bank for the card
+Card	currency_id	int unsigned	NO	NULL	MUL		The currency the card earns as rewards from use
+Card	loyalty_program_id	int unsigned	YES	NULL			
+Card	bank_retail_url	varchar(2048)	YES	NULL			The sanitized official URL for the credit card from the issuing bank. (This is the promotional page URL, not the application page)
+Card	cobrand_retail_url	varchar(2048)	YES	NULL			The sanitized official URL for the credit card from the cobrand partner, if applicable
+Card	referral_url	varchar(2048)	YES	NULL			Reference Points' referral URL for the card, if applicable
+Card	card_art_url	varchar(2048)	YES	NULL			The direct URL for the card's artwork, hosted on Reference Points' CDN
+Card	notes	varchar(2048)	YES	NULL			
+Card	reference_points_url	varchar(2048)	YES	NULL			
+CardBenefitCredit	id	int unsigned	NO	NULL	PRI	auto_increment	
+CardBenefitCredit	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+CardBenefitCredit	card_id	int unsigned	NO	NULL	MUL		
+CardBenefitCredit	benefit_credit_id	int unsigned	NO	NULL	MUL		
+CardOffer	id	int unsigned	NO	NULL	PRI	auto_increment	
+CardOffer	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+CardPromoAPR	id	int unsigned	NO	NULL	PRI	auto_increment	
+CardPromoAPR	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+CardSpendMultiplier	id	int unsigned	NO	NULL	PRI	auto_increment	
+CardSpendMultiplier	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+CardSpendMultiplier	card_id	int unsigned	NO	NULL			
+CardSpendMultiplier	spend_multiplier_id	int unsigned	NO	NULL			
+CruiseLine	id	int unsigned	NO	NULL	PRI	auto_increment	
+CruiseLine	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+Currency	id	int unsigned	NO	NULL	PRI	auto_increment	
+Currency	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+Currency	sort_order	int unsigned	YES	NULL	UNI		
+Currency	long_name	varchar(255)	NO	NULL			
+Currency	short_name	varchar(255)	NO	NULL			
+Currency	abbreviation	varchar(255)	NO	NULL	UNI		
+Currency	currency_type	enum('Airline','Cash','Cruise','Hotel','Other','Retail','Transferrable')	NO	NULL			Transferrable, point or mile
+Currency	unit_type	enum('Cash','Mile','Point')	NO	NULL			Point or mile
+Currency	base_median_cpp	double	YES	NULL			
+Currency	base_average_cpp	double	YES	NULL			
+CurrencyPurchase	id	int unsigned	NO	NULL	PRI	auto_increment	
+CurrencyPurchase	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+CurrencyPurchasePromo	id	int unsigned	NO	NULL	PRI	auto_increment	
+CurrencyPurchasePromo	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+CurrencyTransferPartner	id	int unsigned	NO	NULL	PRI	auto_increment	
+CurrencyTransferPartner	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+CurrencyTransferPartner	from_loyalty_program_id	int unsigned	NO	NULL	MUL		The loyalty program from which transferred points originate
+CurrencyTransferPartner	to_loyalty_program_id	int unsigned	NO	NULL	MUL		The loyalty program to which transferred points arrive
+CurrencyTransferPartner	base_numerator	bigint unsigned	NO	NULL			The fully reduced numerator of the conversion ratio 
+CurrencyTransferPartner	base_denominator	bigint unsigned	NO	NULL	MUL		The fully reduced denominator of the conversion ratio 
+CurrencyTransferPartner	base_decimal_expression	decimal(30,15)	YES	NULL		STORED GENERATED	
+CurrencyTransferPartner	transfer_speed_hours	smallint unsigned	YES	0	MUL		The quoted or observed speed in which transfers are processed, in hours. A transfer speed of 0 represents an instantaneous transfer speed
+CurrencyTransferPartner	transfer_speed_display	varchar(32)	YES	NULL		STORED GENERATED	
+CurrencyTransferPartner	transfer_min_qty	smallint unsigned	YES	NULL			The minimum amount of origin currency to complete a transfer
+CurrencyTransferPartner	transfer_max_qty	mediumint unsigned	YES	NULL			The maximum amount of origin currency allowed to transfer at a time
+CurrencyTransferPartner	transfer_unit	smallint unsigned	YES	NULL			The smallest increment of currency that a transfer amount can be adjusted by
+CurrencyTransferPartner	transfer_bonus_amount	varchar(255)	YES	NULL			The quantity of destination currency that is provided as an additional transfer bonus, when the transfer bonus unit is met
+CurrencyTransferPartner	transfer_bonus_unit	varchar(255)	YES	NULL			The quantity of origin currency that must be transferred to realize a transfer bonus
+CurrencyTransferPartner	is_active	tinyint(1)	NO	NULL			Whether or not the partnership is currently active
+CurrencyTransferPartner	availability	enum('Public','Limited','Targeted')	NO	Public			Whether the transfer is available to the public, restricted to a defined group, or targeted
+CurrencyTransferPartner	notes	varchar(2048)	YES	NULL			
+CurrencyTransferPartner	source_url	varchar(2048)	NO	NULL			The primary source describing the transfer partner relationship
+CurrencyTransferPartnerPromo	id	int unsigned	NO	NULL	PRI	auto_increment	
+CurrencyTransferPartnerPromo	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+CurrencyValuation	id	int unsigned	NO	NULL	PRI	auto_increment	
+CurrencyValuation	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+Hotelier	id	int unsigned	NO	NULL	PRI	auto_increment	
+Hotelier	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+Hotelier	full_name	varchar(255)	NO	NULL			
+Hotelier	short_name	varchar(255)	NO	NULL			
+Hotelier	loyalty_program_id	int unsigned	YES	NULL	MUL		
+Hotelier	logo_url	varchar(512)	YES	NULL			
+Hotelier	website_url	varchar(512)	YES	NULL			
+Hotelier	notes	varchar(2048)	YES	NULL			
+LoyaltyProgram	id	int unsigned	NO	NULL	PRI	auto_increment	
+LoyaltyProgram	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+LoyaltyProgram	full_name	varchar(255)	NO	NULL	UNI		
+LoyaltyProgram	short_name	varchar(255)	YES	NULL	UNI		
+LoyaltyProgram	program_code	varchar(255)	YES	NULL	UNI		
+LoyaltyProgram	type	enum('Airline','Bank','Hotel','Other','Retail','Travel')	YES	NULL			
+LoyaltyProgram	currency_id	int unsigned	YES	NULL	MUL		
+LoyaltyProgram	is_active	tinyint(1)	NO	1			
+LoyaltyProgram	website_url	varchar(512)	YES	NULL			
+LoyaltyProgram	logo_url	varchar(512)	YES	NULL			
+LoyaltyProgram	notes	varchar(2048)	YES	NULL			
+Processor	id	int unsigned	NO	NULL	PRI	auto_increment	
+Processor	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+Processor	processor_name	varchar(255)	NO	NULL	UNI		The name of the payment processor
+Processor	logo_url	varchar(512)	YES	NULL			
+ProcessorTier	id	int unsigned	NO	NULL	PRI	auto_increment	
+ProcessorTier	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+ProcessorTier	processor_id	int unsigned	NO	NULL	MUL		
+ProcessorTier	full_name	varchar(255)	NO	NULL			
+ProcessorTier	short_name	varchar(255)	NO	NULL			
+ProcessorTier	code	varchar(255)	NO	NULL			
+ProcessorTier	rank	smallint	NO	NULL			
+ProcessorTier	demographic	enum('Personal','Business')	NO	NULL			
+ProcessorTier	is_active	tinyint(1)	NO	NULL			
+ProcessorTier	logo_url	varchar(255)	YES	NULL			
+ProcessorTier	website_url	varchar(255)	YES	NULL			
+ProcessorTier	notes	varchar(255)	YES	NULL			
+ProgramOwner	id	int unsigned	NO	NULL	PRI	auto_increment	
+ProgramOwner	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+Retailer	id	int unsigned	NO	NULL	PRI	auto_increment	
+Retailer	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+SpendBaseCategory	id	int unsigned	NO	NULL	PRI	auto_increment	
+SpendBaseCategory	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+SpendBaseCategory	category	varchar(255)	NO	NULL			
+SpendBaseCategory	description	varchar(2048)	YES	NULL			
+SpendBaseCategory	exclusions	varchar(2048)	YES	NULL			
+SpendBaseCategory	notes	varchar(2048)	YES	NULL			
+SpendCardCategory	id	int unsigned	NO	NULL	PRI	auto_increment	
+SpendCardCategory	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
+SpendMultiplier	id	int unsigned	NO	NULL	PRI	auto_increment	
+SpendMultiplier	created_at	timestamp	NO	CURRENT_TIMESTAMP		DEFAULT_GENERATED	
