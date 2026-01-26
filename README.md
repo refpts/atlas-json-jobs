@@ -19,6 +19,7 @@ data-to-table refresh on a schedule. Each job:
 - `run.js`: CLI entrypoint (run one job or all jobs).
 - `jobs/*.js`: job definitions (data fetch + table config).
 - `lib/table_pipeline.js`: orchestrates DB → JSON/HTML → Spaces → Ghost update.
+- `lib/page_pipeline.js`: orchestrates multi-table page/post updates in one pass.
 - `lib/table_generator.js`: JSON table spec → canonical HTML.
 - `lib/ghost.js`: fetch/replace/update Ghost HTML.
 - `lib/spaces.js`: publish JSON/HTML to DigitalOcean Spaces.
@@ -93,8 +94,10 @@ keeping the rest of the page intact.
 - `fetchById({ type, id })`: Fetches a `page` or `post` by ID.
 - `updateHtml({ type, id, html, updated_at })`: Updates a page/post HTML body.
 - `replaceTableHtml({ html, tableId, newTableHtml })`: Replaces a table by ID.
+- `replaceTablesHtml({ html, tableHtmlById })`: Replaces multiple tables by ID.
 - `updateTableBySlug({ type, slug, tableId, newTableHtml })`: Full fetch →
   replace → update flow by slug.
+- `updateTablesBySlug({ type, slug, tableHtmlById })`: Multi-table update by slug.
 
 ### Minimal example
 
@@ -187,6 +190,72 @@ module.exports = job;
   exist even if Ghost fails.
 - Ghost updates are strict: if the target table is missing or duplicated, the
   job fails to avoid corrupting content.
+
+## Page Pipeline Service (Multi-Table)
+
+Use `lib/page_pipeline.js` when a single Ghost page/post contains **multiple**
+tables. It builds every table, uploads their artifacts, and performs **one**
+Ghost update that swaps all target tables in a single pass.
+
+### How it differs from table pipeline
+
+- One job maps to one Ghost page/post.
+- `fetchData()` can load shared data for multiple tables.
+- Each table still gets its own JSON/HTML artifacts in Spaces.
+- Only one Ghost fetch/update is performed for the page/post.
+
+### Required job fields
+
+- `name`
+- `ghost.type`, `ghost.slug`
+- `tables[]` with `id`, `output.jsonKey`, `output.htmlKey`
+- `fetchData()` **or** `query`
+- `buildTable()` **or** `table + buildRows` for each table
+
+### Minimal example
+
+```js
+const { runPagePipeline } = require("./lib/page_pipeline");
+
+const job = {
+  name: "smoke-test-page",
+  includeInAll: true,
+  output: {
+    space: "public",
+    cacheControl: "public, max-age=300",
+    skipUpload: true
+  },
+  ghost: {
+    type: "page",
+    slug: "smoke-test"
+  },
+  fetchData: async (pool) => {
+    const [rows] = await pool.query("SELECT ...");
+    return { rows };
+  },
+  tables: [
+    {
+      id: "table-one",
+      output: {
+        jsonKey: "table-one.json",
+        htmlKey: "table-one.html"
+      },
+      table: { settings: { sortableColumns: true } },
+      buildTable: ({ rows }) => ({ columns: [ ... ], rows: [ ... ] })
+    },
+    {
+      id: "table-two",
+      output: {
+        jsonKey: "table-two.json",
+        htmlKey: "table-two.html"
+      },
+      table: { settings: { sortableColumns: true } },
+      buildTable: ({ rows }) => ({ columns: [ ... ], rows: [ ... ] })
+    }
+  ],
+  run: async () => runPagePipeline(job)
+};
+```
 
 ## Running Jobs
 

@@ -1,4 +1,4 @@
-const { runTablePipeline } = require("../lib/table_pipeline");
+const { runPagePipeline } = require("../lib/page_pipeline");
 
 const SOURCE_PROGRAMS = [
   { id: 63, name: "Membership Rewards" },
@@ -23,27 +23,25 @@ const ROW_HEADER_MAX_WIDTH = "min(200px, 33vw)";
 const DATA_COLUMN_WIDTH = "120px";
 const TOTAL_COLUMN_WIDTH = "96px";
 
+const TABLE_BASE = {
+  figcaption: "Last updated {{published}} ET",
+  figure: {
+    classes: ["kg-width-wide"],
+  },
+  settings: TABLE_SETTINGS,
+};
+
 const job = {
   name: "transferrable_currency_airline_matrix_table",
   includeInAll: true,
   output: {
     space: "public",
-    jsonKey: "transferrable_currency_airline_matrix.json",
-    htmlKey: "transferrable_currency_airline_matrix.html",
     cacheControl: "public, max-age=300",
     skipUpload: true,
   },
   ghost: {
     type: "page",
     slug: "smoke-test",
-    tableId: "transferrable_currency_airline_matrix_table",
-  },
-  table: {
-    figcaption: "Last updated {{published}} ET",
-    figure: {
-      classes: ["kg-width-wide", "table-card-centered"],
-    },
-    settings: TABLE_SETTINGS,
   },
   fetchData: async (pool) => {
     const sourceIds = SOURCE_PROGRAMS.map((program) => program.id);
@@ -109,157 +107,167 @@ const job = {
 
     return { sources, transferRows };
   },
-  buildTable: ({ sources, transferRows }) => {
-    const columns = [
-      {
-        key: "program",
-        label: "Program",
-        sort: { enabled: false },
-        align: "center",
-        valign: "middle",
-        width: { max: ROW_HEADER_MAX_WIDTH },
+  tables: [
+    {
+      id: "transferrable_currency_airline_matrix_table",
+      output: {
+        jsonKey: "transferrable_currency_airline_matrix.json",
+        htmlKey: "transferrable_currency_airline_matrix.html",
       },
-      ...sources.map((source) => ({
-        key: normalizeKey(source.name),
-        label: source.name,
-        sort: { enabled: true },
-        align: "center",
-        valign: "middle",
-        width: { value: DATA_COLUMN_WIDTH },
-      })),
-      {
-        key: "total",
-        label: "Total",
-        sort: { enabled: true },
-        total: true,
-        align: "center",
-        valign: "middle",
-        width: { value: TOTAL_COLUMN_WIDTH },
-      },
-    ];
+      table: TABLE_BASE,
+      buildTable: ({ sources, transferRows }) => {
+        const columns = [
+          {
+            key: "program",
+            label: "Program",
+            sort: { enabled: false },
+            align: "center",
+            valign: "middle",
+            width: { max: ROW_HEADER_MAX_WIDTH },
+          },
+          ...sources.map((source) => ({
+            key: normalizeKey(source.name),
+            label: source.name,
+            sort: { enabled: true },
+            align: "center",
+            valign: "middle",
+            width: { value: DATA_COLUMN_WIDTH },
+          })),
+          {
+            key: "total",
+            label: "Total",
+            sort: { enabled: true },
+            total: true,
+            align: "center",
+            valign: "middle",
+            width: { value: TOTAL_COLUMN_WIDTH },
+          },
+        ];
 
-    const rowMap = new Map();
-    const cellMap = new Map();
-    const columnCounts = new Map();
-    let totalCount = 0;
-    const rowHeaderSpec = { align: "left", valign: "middle" };
+        const rowMap = new Map();
+        const cellMap = new Map();
+        const columnCounts = new Map();
+        let totalCount = 0;
+        const rowHeaderSpec = { align: "left", valign: "middle" };
 
-    transferRows.forEach((row) => {
-      if (!rowMap.has(row.to_id)) {
-        rowMap.set(row.to_id, {
-          id: row.to_id,
-          companyName: row.company_name || row.to_name,
-          loyaltyName: row.to_name,
-        });
-      }
-
-      cellMap.set(`${row.from_id}:${row.to_id}`, {
-        rate: `${String(row.base_numerator)}:${String(row.base_denominator)}`,
-        speed: row.transfer_speed_display || "",
-        decimalExpression: row.decimal_expression,
-        speedHours: row.transfer_speed_hours,
-      });
-    });
-
-    const rows = Array.from(rowMap.values())
-      .sort((a, b) =>
-        (a.companyName || "").localeCompare(b.companyName || "", "en", {
-          sensitivity: "base",
-        }),
-      )
-      .map((row) => {
-        const label = [
-          `<span class="rp-table__row-title">${escapeHtml(
-            row.companyName,
-          )}</span>`,
-          `<span class="rp-table__row-subtitle">${escapeHtml(
-            row.loyaltyName,
-          )}</span>`,
-        ].join("");
-
-        let rowCount = 0;
-        const cells = sources.map((source) => {
-          const transfer = cellMap.get(`${source.id}:${row.id}`);
-          if (!transfer) {
-            return {
-              value: "",
-              sort: { primary: "" },
-              align: "center",
-              valign: "middle",
-            };
+        transferRows.forEach((row) => {
+          if (!rowMap.has(row.to_id)) {
+            rowMap.set(row.to_id, {
+              id: row.to_id,
+              companyName: row.company_name || row.to_name,
+              loyaltyName: row.to_name,
+            });
           }
 
-          rowCount += 1;
-          totalCount += 1;
-          columnCounts.set(
-            source.id,
-            (columnCounts.get(source.id) || 0) + 1,
-          );
+          cellMap.set(`${row.from_id}:${row.to_id}`, {
+            rate: `${String(row.base_numerator)}:${String(row.base_denominator)}`,
+            speed: row.transfer_speed_display || "",
+            decimalExpression: row.decimal_expression,
+            speedHours: row.transfer_speed_hours,
+          });
+        });
 
-          const value = transfer.speed
-            ? `${escapeHtml(transfer.rate)}<br>${escapeHtml(transfer.speed)}`
-            : escapeHtml(transfer.rate);
+        const rows = Array.from(rowMap.values())
+          .sort((a, b) =>
+            (a.companyName || "").localeCompare(b.companyName || "", "en", {
+              sensitivity: "base",
+            }),
+          )
+          .map((row) => {
+            const label = [
+              `<span class="rp-table__row-title">${escapeHtml(
+                row.companyName,
+              )}</span>`,
+              `<span class="rp-table__row-subtitle">${escapeHtml(
+                row.loyaltyName,
+              )}</span>`,
+            ].join("");
 
-          const primary = parseSortNumber(transfer.decimalExpression);
-          const secondary =
-            transfer.speedHours == null ? null : Number(transfer.speedHours);
+            let rowCount = 0;
+            const cells = sources.map((source) => {
+              const transfer = cellMap.get(`${source.id}:${row.id}`);
+              if (!transfer) {
+                return {
+                  value: "",
+                  sort: { primary: "" },
+                  align: "center",
+                  valign: "middle",
+                };
+              }
+
+              rowCount += 1;
+              totalCount += 1;
+              columnCounts.set(
+                source.id,
+                (columnCounts.get(source.id) || 0) + 1,
+              );
+
+              const value = transfer.speed
+                ? `${escapeHtml(transfer.rate)}<br>${escapeHtml(transfer.speed)}`
+                : escapeHtml(transfer.rate);
+
+              const primary = parseSortNumber(transfer.decimalExpression);
+              const secondary =
+                transfer.speedHours == null ? null : Number(transfer.speedHours);
+              return {
+                value,
+                sort: {
+                  primary: primary == null ? "" : primary,
+                  secondary,
+                },
+                align: "center",
+                valign: "middle",
+              };
+            });
+
+            cells.push({
+              value: String(rowCount),
+              sort: { primary: rowCount },
+              align: "center",
+              valign: "middle",
+            });
+
+            return {
+              label,
+              cells,
+              header: rowHeaderSpec,
+              valign: "middle",
+            };
+          });
+
+        const totalRowCells = sources.map((source) => {
+          const count = columnCounts.get(source.id) || 0;
           return {
-            value,
-            sort: {
-              primary: primary == null ? "" : primary,
-              secondary,
-            },
+            value: String(count),
+            sort: { primary: count },
             align: "center",
             valign: "middle",
           };
         });
-
-        cells.push({
-          value: String(rowCount),
-          sort: { primary: rowCount },
+        totalRowCells.push({
+          value: String(totalCount),
+          sort: { primary: totalCount },
           align: "center",
           valign: "middle",
         });
 
-        return {
-          label,
-          cells,
+        rows.push({
+          label: "Total",
+          total: true,
+          cells: totalRowCells,
           header: rowHeaderSpec,
           valign: "middle",
+        });
+
+        return {
+          ...TABLE_BASE,
+          columns,
+          rows,
         };
-      });
-
-    const totalRowCells = sources.map((source) => {
-      const count = columnCounts.get(source.id) || 0;
-      return {
-        value: String(count),
-        sort: { primary: count },
-        align: "center",
-        valign: "middle",
-      };
-    });
-    totalRowCells.push({
-      value: String(totalCount),
-      sort: { primary: totalCount },
-      align: "center",
-      valign: "middle",
-    });
-
-    rows.push({
-      label: "Total",
-      total: true,
-      cells: totalRowCells,
-      header: rowHeaderSpec,
-      valign: "middle",
-    });
-
-    return {
-      ...job.table,
-      columns,
-      rows,
-    };
-  },
-  run: async () => runTablePipeline(job),
+      },
+    },
+  ],
+  run: async () => runPagePipeline(job),
 };
 
 function normalizeKey(value) {
