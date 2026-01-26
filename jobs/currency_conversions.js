@@ -1,4 +1,4 @@
-const { getDbPool } = require("../lib/db");
+const { runPagePipeline } = require("../lib/page_pipeline");
 
 const COLUMNS = [
   { key: "source_currency", name: "Source Currency" },
@@ -12,6 +12,19 @@ const COLUMNS = [
   { key: "transfer_bonus", name: "Transfer Bonus" },
   { key: "notes", name: "Notes" },
 ];
+
+const TABLE_SETTINGS = {
+  density: "compact",
+  width: "max-content",
+};
+
+const TABLE_BASE = {
+  figcaption: "Last updated {{published}} ET",
+  figure: {
+    classes: ["kg-width-wide"],
+  },
+  settings: TABLE_SETTINGS,
+};
 
 const UNIT_LABELS = {
   Point: { singular: "point", plural: "points" },
@@ -49,7 +62,12 @@ function getUnitLabel(unitType, amount) {
 function makeCell(display, sortValue) {
   const displayValue = display == null ? "" : display;
   const sort = sortValue == null || sortValue === "" ? "" : sortValue;
-  return { display: displayValue, sort };
+  return {
+    value: displayValue,
+    sort: {
+      primary: sort,
+    },
+  };
 }
 
 function formatQuantityCell(value, unitType) {
@@ -93,17 +111,19 @@ function formatTransferBonusCell({
   return makeCell(display, amountNumber == null ? bonusAmount : amountNumber);
 }
 
-module.exports = {
+const job = {
   name: "currency_conversions",
+  includeInAll: true,
   output: {
     space: "public",
-    key: "currency_conversions.json",
     cacheControl: "public, max-age=300",
+    skipUpload: true,
   },
-
-  run: async () => {
-    const pool = getDbPool();
-
+  ghost: {
+    type: "page",
+    slug: "currency-conversion",
+  },
+  fetchData: async (pool) => {
     const [rows] = await pool.query(
       `
         SELECT
@@ -139,49 +159,64 @@ module.exports = {
       `,
     );
 
-    await pool.end();
-
-    const dataRows = rows.map((row) => {
-      const conversionDisplay =
-        row.base_numerator == null || row.base_denominator == null
-          ? ""
-          : `${String(row.base_numerator)}:${String(row.base_denominator)}`;
-      const conversionSort = parseNumber(row.base_decimal_expression);
-
-      return {
-        source_currency: makeCell(row.from_name || "", row.from_name || ""),
-        destination_currency: makeCell(row.to_name || "", row.to_name || ""),
-        conversion_rate: makeCell(conversionDisplay, conversionSort),
-        transfer_speed: makeCell(
-          row.transfer_speed_display || "",
-          row.transfer_speed_hours == null ? "" : row.transfer_speed_hours,
-        ),
-        availability: makeCell(row.availability || "", row.availability || ""),
-        min_transfer_qty: formatQuantityCell(
-          row.transfer_min_qty,
-          row.from_unit_type,
-        ),
-        max_transfer_qty: formatQuantityCell(
-          row.transfer_max_qty,
-          row.from_unit_type,
-        ),
-        min_transfer_unit: formatQuantityCell(
-          row.transfer_unit,
-          row.from_unit_type,
-        ),
-        transfer_bonus: formatTransferBonusCell({
-          bonusAmount: row.transfer_bonus_amount,
-          bonusUnit: row.transfer_bonus_unit,
-          destinationUnitType: row.to_unit_type,
-          originUnitType: row.from_unit_type,
-        }),
-        notes: makeCell(row.notes || "", row.notes || ""),
-      };
-    });
-
-    return {
-      columns: COLUMNS,
-      rows: dataRows,
-    };
+    return { rows };
   },
+  tables: [
+    {
+      id: "currency_conversions_table",
+      output: {
+        jsonKey: "currency_conversions.json",
+        htmlKey: "currency_conversions.html",
+      },
+      table: TABLE_BASE,
+      buildTable: ({ rows }) => {
+        const columns = COLUMNS.map((column) => ({
+          key: column.key,
+          label: column.name,
+        }));
+
+        const dataRows = rows.map((row) => {
+          const conversionDisplay =
+            row.base_numerator == null || row.base_denominator == null
+              ? ""
+              : `${String(row.base_numerator)}:${String(row.base_denominator)}`;
+          const conversionSort = parseNumber(row.base_decimal_expression);
+
+          const cells = [
+            makeCell(row.from_name || "", row.from_name || ""),
+            makeCell(row.to_name || "", row.to_name || ""),
+            makeCell(conversionDisplay, conversionSort),
+            makeCell(
+              row.transfer_speed_display || "",
+              row.transfer_speed_hours == null ? "" : row.transfer_speed_hours,
+            ),
+            makeCell(row.availability || "", row.availability || ""),
+            formatQuantityCell(row.transfer_min_qty, row.from_unit_type),
+            formatQuantityCell(row.transfer_max_qty, row.from_unit_type),
+            formatQuantityCell(row.transfer_unit, row.from_unit_type),
+            formatTransferBonusCell({
+              bonusAmount: row.transfer_bonus_amount,
+              bonusUnit: row.transfer_bonus_unit,
+              destinationUnitType: row.to_unit_type,
+              originUnitType: row.from_unit_type,
+            }),
+            makeCell(row.notes || "", row.notes || ""),
+          ];
+
+          return {
+            cells,
+          };
+        });
+
+        return {
+          ...TABLE_BASE,
+          columns,
+          rows: dataRows,
+        };
+      },
+    },
+  ],
+  run: async () => runPagePipeline(job),
 };
+
+module.exports = job;

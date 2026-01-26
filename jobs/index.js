@@ -1,8 +1,10 @@
 const transferrable_currency_airline_matrix_table = require("./transferrable_currency_airline_matrix_table");
+const currency_conversions = require("./currency_conversions");
 
 const JOBS = {
   [transferrable_currency_airline_matrix_table.name]:
     transferrable_currency_airline_matrix_table,
+  [currency_conversions.name]: currency_conversions,
 };
 
 function getJob(name) {
