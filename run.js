@@ -1,8 +1,5 @@
 // run.js
 const { getJob, getAllJobs } = require("./jobs");
-const { putJson } = require("./lib/spaces");
-const { buildEnvelope } = require("./lib/envelope");
-
 async function runJob(job) {
   if (!job || typeof job !== "object") {
     throw new Error("Job config is required.");
@@ -11,47 +8,18 @@ async function runJob(job) {
     throw new Error(`Job "${job.name || "unknown"}" is missing a run() method.`);
   }
 
-  if (job.output && job.output.skipUpload) {
-    // New pipeline jobs handle their own uploads.
-    await job.run();
-    return;
-  }
-
   if (!job.output) {
     throw new Error(`Job "${job.name || "unknown"}" is missing output config.`);
   }
-  if (!job.output.key) {
-    throw new Error(`Job "${job.name || "unknown"}" is missing output.key.`);
-  }
-
-  const space = job.output.space || "public";
-  const bucketOverride = job.output.bucketEnv
-    ? process.env[job.output.bucketEnv]
-    : undefined;
-
-  if (job.output.bucketEnv && !bucketOverride) {
-    throw new Error(`Missing env var ${job.output.bucketEnv}`);
+  if (job.output.skipUpload !== true) {
+    throw new Error(
+      `Job "${job.name || "unknown"}" must handle uploads (set output.skipUpload: true).`,
+    );
   }
 
   console.log(`[${job.name}] start`);
 
-  // Each job returns the *contents* payload only
-  const contents = await job.run();
-
-  // Wrap universally
-  const json = buildEnvelope(contents);
-
-  const result = await putJson({
-    space,
-    bucket: bucketOverride,
-    key: job.output.key,
-    json,
-    cacheControl: job.output.cacheControl,
-  });
-
-  console.log(
-    `[${job.name}] uploaded s3://${result.bucket}/${result.key} (${result.bytes} bytes)`,
-  );
+  await job.run();
 }
 
 async function main() {

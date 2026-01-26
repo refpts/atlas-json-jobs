@@ -18,7 +18,6 @@ data-to-table refresh on a schedule. Each job:
 
 - `run.js`: CLI entrypoint (run one job or all jobs).
 - `jobs/*.js`: job definitions (data fetch + table config).
-- `lib/table_pipeline.js`: orchestrates DB → JSON/HTML → Spaces → Ghost update.
 - `lib/page_pipeline.js`: orchestrates multi-table page/post updates in one pass.
 - `lib/table_generator.js`: JSON table spec → canonical HTML.
 - `lib/ghost.js`: fetch/replace/update Ghost HTML.
@@ -32,15 +31,15 @@ data-to-table refresh on a schedule. Each job:
 Cron/Manual
    |
    v
-run.js -> job -> table_pipeline
+run.js -> page job -> page_pipeline
                 |
-                +-> MySQL -> data -> buildTable() -> table spec
+                +-> MySQL -> data -> buildTable() -> table spec(s)
                 |                         |
-                |                         +-> envelope.json -> Spaces
+                |                         +-> envelope.json -> Spaces (per table)
                 |
-                +-> table_generator -> table.html -> Spaces
+                +-> table_generator -> table.html -> Spaces (per table)
                 |
-                +-> Ghost fetch -> replace table -> update page/post
+                +-> Ghost fetch -> replace tables -> update page/post
 ```
 
 ### Update sequence (per job)
@@ -48,12 +47,12 @@ run.js -> job -> table_pipeline
 ```
 run.js
   -> job.fetchData(pool)
-  -> job.buildTable(data)
+  -> job.buildTable(data) [per table]
   -> buildHeader() + envelope
-  -> putJson()
-  -> generateTableHtml()
-  -> putHtml()
-  -> updateTableBySlug()
+  -> putJson() [per table]
+  -> generateTableHtml() [per table]
+  -> putHtml() [per table]
+  -> updateTablesBySlug()
 ```
 
 ### Artifacts and identifiers
@@ -93,103 +92,27 @@ keeping the rest of the page intact.
 - `fetchBySlug({ type, slug })`: Fetches a `page` or `post` by slug.
 - `fetchById({ type, id })`: Fetches a `page` or `post` by ID.
 - `updateHtml({ type, id, html, updated_at })`: Updates a page/post HTML body.
-- `replaceTableHtml({ html, tableId, newTableHtml })`: Replaces a table by ID.
 - `replaceTablesHtml({ html, tableHtmlById })`: Replaces multiple tables by ID.
-- `updateTableBySlug({ type, slug, tableId, newTableHtml })`: Full fetch →
-  replace → update flow by slug.
 - `updateTablesBySlug({ type, slug, tableHtmlById })`: Multi-table update by slug.
 
 ### Minimal example
 
 ```js
-const { updateTableBySlug } = require("./lib/ghost");
+const { updateTablesBySlug } = require("./lib/ghost");
 
 async function run() {
-  await updateTableBySlug({
+  await updateTablesBySlug({
     type: "page",
     slug: "smoke-test",
-    tableId: "transfers-airline-matrix",
-    newTableHtml: "<figure data-rp-table-id=\"transfers-airline-matrix\">...</figure>",
+    tableHtmlById: {
+      "transfers-airline-matrix": "<figure data-rp-table-id=\"transfers-airline-matrix\">...</figure>",
+      "transfers-hotel-matrix": "<figure data-rp-table-id=\"transfers-hotel-matrix\">...</figure>"
+    }
   });
 }
 
 run().catch(console.error);
 ```
-
-## Table Pipeline Service
-
-The table pipeline in `lib/table_pipeline.js` is the default path for new table
-jobs. It orchestrates data fetching, JSON/HTML generation, Spaces publishing,
-and Ghost updates in a single flow.
-
-### Required job fields
-
-- `name`: unique job identifier (also used as the default table ID).
-- `output.jsonKey`: Spaces key for the JSON artifact.
-- `output.htmlKey`: Spaces key for the HTML artifact.
-- `fetchData(pool)` **or** `query` / `queryParams`: how to load data.
-- `buildTable(data, context)` **or** `table` + `buildRows(data, context)`:
-  how to produce the final table spec.
-
-### Optional job fields
-
-- `includeInAll`: set to `false` to exclude from `run.js all`.
-- `output.space`: `"public"` or `"private"` (default `"public"`).
-- `output.bucketEnv`: override bucket per job (env var name).
-- `output.cacheControl`: cache header for JSON/HTML uploads.
-- `output.skipUpload`: skip `run.js` uploads when the job handles its own.
-- `ghost.type`: `"page"` or `"post"`.
-- `ghost.slug`: Ghost slug to update.
-- `ghost.tableId`: explicit table identifier (defaults to `job.name`).
-- `table`: base table config (figure classes, settings, etc.).
-
-### Job skeleton
-
-```js
-const { runTablePipeline } = require("./lib/table_pipeline");
-
-const job = {
-  name: "transferrable_currency_airline_matrix_table",
-  includeInAll: true,
-  output: {
-    space: "public",
-    jsonKey: "transferrable_currency_airline_matrix.json",
-    htmlKey: "transferrable_currency_airline_matrix.html",
-    cacheControl: "public, max-age=300",
-    skipUpload: true
-  },
-  ghost: {
-    type: "page",
-    slug: "smoke-test",
-    tableId: "transferrable_currency_airline_matrix_table"
-  },
-  table: {
-    figcaption: "Last updated {{published}} ET",
-    figure: { classes: ["kg-width-wide"] },
-    settings: { sortableColumns: true, sortableRows: true }
-  },
-  fetchData: async (pool) => {
-    const [rows] = await pool.query("SELECT ...");
-    return { rows };
-  },
-  buildTable: ({ rows }) => ({
-    columns: [ ... ],
-    rows: [ ... ]
-  }),
-  run: async () => runTablePipeline(job)
-};
-
-module.exports = job;
-```
-
-### Pipeline behavior details
-
-- Data fetch uses a MySQL pool and always closes the pool (even on errors).
-- JSON is wrapped with a standardized header from `buildHeader()`.
-- JSON and HTML are published **before** the Ghost update so artifacts always
-  exist even if Ghost fails.
-- Ghost updates are strict: if the target table is missing or duplicated, the
-  job fails to avoid corrupting content.
 
 ## Page Pipeline Service (Multi-Table)
 
@@ -268,8 +191,7 @@ node run.js all
 
 Notes:
 - `all` runs every job with `includeInAll !== false`.
-- Table pipeline jobs typically set `output.skipUpload: true` because they
-  upload JSON/HTML internally.
+- All jobs are expected to manage their own uploads (`output.skipUpload: true`).
 
 ## Object Storage (Spaces)
 
