@@ -335,6 +335,17 @@ Notes:
 - Use `table.figure.classes` to apply `kg-width-wide` or `kg-width-full`.
 - The generator does not render `<caption>` inside the table.
 
+### Generator defaults
+
+When not explicitly set in the table spec, the generator applies:
+
+- Figure classes: always includes `rp-table` and `table-card-centered`.
+- Column alignment: defaults to `column-align-left`.
+- Column header vertical alignment: defaults to `cell-valign-bottom`.
+- Body row vertical alignment: defaults to `row-valign-middle`.
+- Row header alignment: defaults to `cell-align-left`.
+- Settings defaults: `sortableColumns: true`, `reorder: "both"`.
+
 ### Figure configuration
 
 To control figure-level layout (Ghost widths) or add figure attributes, use the
