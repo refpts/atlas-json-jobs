@@ -21,6 +21,14 @@ const HOTEL_SOURCE_PROGRAMS = [
   { id: 57, name: "Wells Fargo Rewards" },
 ];
 
+const REQUIREMENT_ROWS = [
+  { id: "min_transfer_qty", label: "Minimum transfer quantity" },
+  { id: "max_transfer_qty", label: "Maximum transfer quantity" },
+  { id: "min_transfer_unit", label: "Minimum transfer unit" },
+  { id: "airline_partner_count", label: "Airline transfer partners" },
+  { id: "hotel_partner_count", label: "Hotel transfer partners" },
+];
+
 const TABLE_SETTINGS = {
   sortableColumns: true,
   sortableRows: true,
@@ -192,6 +200,108 @@ function buildMatrixTable({ sources, transferRows }) {
   };
 }
 
+function buildRequirementsTable({ sources, requirementRows }) {
+  const columns = [
+    {
+      key: "requirement",
+      label: "Requirement",
+      sort: { enabled: false },
+      align: "center",
+      valign: "middle",
+      width: { max: ROW_HEADER_MAX_WIDTH },
+    },
+    ...sources.map((source) => ({
+      key: normalizeKey(source.name),
+      label: source.name,
+      sort: { enabled: true },
+      align: "center",
+      valign: "middle",
+      width: { value: DATA_COLUMN_WIDTH },
+    })),
+  ];
+
+  const requirementBySourceId = new Map(
+    requirementRows.map((row) => [row.from_id, row]),
+  );
+
+  const rows = REQUIREMENT_ROWS.map((rowDef) => {
+    const label = `<span class="rp-table__row-title">${escapeHtml(
+      rowDef.label,
+    )}</span>`;
+
+    const cells = sources.map((source) => {
+      const row = requirementBySourceId.get(source.id);
+      if (!row) {
+        return {
+          value: "",
+          sort: { primary: "" },
+          align: "center",
+          valign: "middle",
+        };
+      }
+
+      const rawValue = row[rowDef.id];
+      const formattedValue = formatRequirementValue(rowDef.id, rawValue);
+      const sortValue = parseNumber(rawValue);
+
+      return {
+        value: formattedValue,
+        sort: { primary: sortValue == null ? "" : sortValue },
+        align: "center",
+        valign: "middle",
+      };
+    });
+
+    return {
+      label,
+      cells,
+      header: { align: "left", valign: "middle" },
+      valign: "middle",
+    };
+  });
+
+  return {
+    ...TABLE_BASE,
+    columns,
+    rows,
+  };
+}
+
+function parseNumber(value) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const numberValue = Number(trimmed);
+    return Number.isFinite(numberValue) ? numberValue : null;
+  }
+  return null;
+}
+
+function formatNumber(value) {
+  if (value == null) return "";
+  const numberValue = parseNumber(value);
+  return numberValue == null ? value : numberValue.toLocaleString("en-US");
+}
+
+function formatRequirementValue(rowId, value) {
+  if (value == null) return "";
+  const numberValue = parseNumber(value);
+
+  if (
+    rowId === "min_transfer_qty" ||
+    rowId === "max_transfer_qty" ||
+    rowId === "min_transfer_unit"
+  ) {
+    if (numberValue == null) return value;
+    const formattedNumber = numberValue.toLocaleString("en-US");
+    const suffix = numberValue === 1 ? "point" : "points";
+    return `${formattedNumber} ${suffix}`;
+  }
+
+  return formatNumber(value);
+}
+
 const job = {
   name: "transferrable_currency_airline_matrix_table",
   includeInAll: true,
@@ -288,6 +398,29 @@ const job = {
       [airlineSourceIds],
     );
 
+    const [requirementRows] = await pool.query(
+      `
+        SELECT
+          lp.id AS from_id,
+          MIN(CASE WHEN lp_to.id IS NOT NULL THEN ctp.transfer_min_qty END) AS min_transfer_qty,
+          MAX(CASE WHEN lp_to.id IS NOT NULL THEN ctp.transfer_max_qty END) AS max_transfer_qty,
+          MIN(CASE WHEN lp_to.id IS NOT NULL THEN ctp.transfer_unit END) AS min_transfer_unit,
+          COUNT(DISTINCT CASE WHEN lp_to.type = 'Airline' THEN lp_to.id END) AS airline_partner_count,
+          COUNT(DISTINCT CASE WHEN lp_to.type = 'Hotel' THEN lp_to.id END) AS hotel_partner_count
+        FROM LoyaltyProgram lp
+        LEFT JOIN CurrencyTransferPartner ctp
+          ON ctp.from_loyalty_program_id = lp.id
+          AND ctp.is_active = 1
+        LEFT JOIN LoyaltyProgram lp_to
+          ON ctp.to_loyalty_program_id = lp_to.id
+          AND lp_to.is_active = 1
+        WHERE lp.id IN (?)
+          AND lp.is_active = 1
+        GROUP BY lp.id
+      `,
+      [airlineSourceIds],
+    );
+
     const [hotelTransferRows] = await pool.query(
       `
         SELECT
@@ -318,8 +451,10 @@ const job = {
 
     return {
       airlineSources,
+      requirementSources: airlineSources,
       hotelSources,
       airlineTransferRows,
+      requirementRows,
       hotelTransferRows,
     };
   },
@@ -348,6 +483,19 @@ const job = {
         buildMatrixTable({
           sources: hotelSources,
           transferRows: hotelTransferRows,
+        }),
+    },
+    {
+      id: "transferrable_currency_requirements_table",
+      output: {
+        jsonKey: "transferrable_currency_requirements.json",
+        htmlKey: "transferrable_currency_requirements.html",
+      },
+      table: TABLE_BASE,
+      buildTable: ({ requirementSources, requirementRows }) =>
+        buildRequirementsTable({
+          sources: requirementSources,
+          requirementRows,
         }),
     },
   ],
